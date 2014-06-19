@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: 
+
+Sitemap: http://leenjewel.github.io/sitemap.xml 
