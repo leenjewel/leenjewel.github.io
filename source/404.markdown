@@ -1,0 +1,15 @@
+---
+
+layout: page
+
+title: "404 您访问的页面找不回来了！但我们可以一起寻找失踪的亲人"
+
+comments: false
+
+sharing: false
+
+footer: false
+
+---
+
+<script type="text/javascript" src="http://www.qq.com/404/search_children.js" charset="utf-8"></script>
