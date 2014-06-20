@@ -98,3 +98,6 @@ google_analytics_tracking_id: 'UA-52061917-1'
 
 # Facebook Like
 facebook_like: false
+
+# share to jiathis
+share_to_jiathis: true
