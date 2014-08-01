@@ -1,2 +1,7 @@
 // This File is imported last, and will override other styles in the cascade
 // Add styles here to make changes without digging in too much
+.my-table, .my-table th, .my-table td {
+    border: 1px solid !important;
+    text-align: center !important;
+    padding: 3px !important;
+}
