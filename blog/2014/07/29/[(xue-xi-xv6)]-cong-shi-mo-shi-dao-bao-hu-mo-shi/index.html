@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>leenjewel Blog</title>
+  <title>【学习xv6】从实模式到保护模式 - leenjewel Blog</title>
   <meta name="author" content="leenjewel">
 
   
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://leenjewel.github.io/">
+  <link rel="canonical" href="http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -74,15 +74,12 @@
 </nav>
   <div id="main">
     <div id="content">
-      <div class="blog-index">
+      <div>
+<article class="hentry" role="article">
   
-  
-  
-    <article>
-      
   <header>
     
-      <h1 class="entry-title"><a href="/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">【学习xv6】从实模式到保护模式</a></h1>
+      <h1 class="entry-title">【学习xv6】从实模式到保护模式</h1>
     
     
       <p class="meta">
@@ -100,14 +97,14 @@
 
 <time datetime="2014-07-29T13:27:25+08:00" pubdate data-updated="true">Jul 29<span>th</span>, 2014</time>
         
-         | <a href="/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/#disqus_thread">Comments</a>
+         | <a href="#disqus_thread">Comments</a>
         
       </p>
     
   </header>
 
 
-  <div class="entry-content"><h2>前言</h2>
+<div class="entry-content"><h2>前言</h2>
 
 <p>这是一系列 xv6 代码学习的总结。对于还不知道 xv6 是什么的同学，我这里只简单说一下：xv6 是一个教学用的操作系统，基于 unix v6，再具体的请大家自行 Google 一下 wiki 什么的。</p>
 
@@ -618,120 +615,16 @@
 
 <p>所以这里的跳转语句选择了“代码段”，由于“代码段”的起始内存地址是 0x00000000 ，长度是完整的 4GB，所以后面的“偏移量”仍然相当于是实际的内存地址，所以这里“偏移量”直接用了 $start32，也就是 start32 直接对应的代码位置。通过这个跳转实际上 CPU 就会跳转到 bootasm.S 文件的 start32 标识符处继续执行了。</p>
 </div>
-  
-  
 
 
-    </article>
-  
-  
-    <article>
+  <footer>
+    <p class="meta">
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/">【学习 Xv6 】在 Mac OSX 下运行 Xv6</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
   
 
+<span class="byline author vcard">Posted by <span class="fn">leenjewel</span></span>
 
-<time datetime="2014-07-24T22:14:15+08:00" pubdate data-updated="true">Jul 24<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>编译 xv6</h3>
-
-<p>首先要用 git 把 xv6 的源码 clone 到本地</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>git clone git://pdos.csail.mit.edu/xv6/xv6.git</span></code></pre></td></tr></table></div></figure>
-
-
-<p>xv6 源代码中的 README 文件中 Building And Running xv6 章节有这么一段说明：“To build xv6 on an x86 ELF machine（like Linux or FreeBSD）, run &ldquo;make&rdquo;&hellip;&hellip;”</p>
-
-<p>这里打算简单解释一下什么是 ELF machine 。按理说我们的计算机运行的程序（这里主要指二进制程序）例如 Windows 下的 exe 文件这样的其实无非都是计算机指令。如果试想一下，我们在同一台计算机上，相同架构下的 CPU 对应可识别的应该也是同一套指令，也就是说不管是 Windows 下的还是 Linux 亦或是 Mac OS 下的二进制程序所对应的 CPU 指令都应该是一样的。那为什么这几个操作系统间的二进制可执行程序不能通用呢？</p>
-
-<p>答案简单的解释起来就是：“他们之间各自的二进制可执行程序的组织方式不同”，也即所谓的格式不统一。</p>
-
-<p>一个二进制程序除了包含有给 CPU 去执行的指令外，还有一些其他的信息，比如数据段，版本信息，链接指示信息等，它们与代码指令一起组成了二进制的可执行程序。而到底以什么样的格式或者顺序将他们组织在一起，每个操作系统就各有不同了，这也是造成他们之间的二进制程序无法通用的主要原因。</p>
-
-<p>言归正传，这里的 ELF 就指的是产生的二进制程序的组装方式。 ELF 是 Linux 和 FreeBSD 这种类 Unix 系统的二进制程序组装格式。 Windows 下的有 PE、COFF 格式，当然 Mac OSX 也有自己的格式。</p>
-
-<p>说到这里对 ELF、PE、COFF 等二进制程序是如何编译链接组装的，强烈向大家推荐一本书<a href="http://product.china-pub.com/195439">《程序员的自我修养&mdash;链接、装载与库》</a>书中对这方面知识的介绍相当的详细和深入！</p>
-
-<p>继续回到我们的 xv6 。前面说了这么多其实是想告诉大家在 Mac OSX 上编译 xv6 绝非容易的事。当然在 xv6 项目的 README 文件中也给了相关的解法。简单的说就是让你按照<a href="http://pdos.csail.mit.edu/6.828/2012/tools.html">这个页面的步骤</a>去安装相应的编译工具，可以理解为在 Mac OSX 上通过交叉编译来支持产生 ELF 格式的二进制程序（就好比通过 Xcode 可以交叉编译出在 ARM 架构的 iPhone 上运行的 APP 一样）。</p>
-
-<p>但是我在尝试着按照<a href="http://pdos.csail.mit.edu/6.828/2012/tools.html">这个页面的步骤</a>去安装相应的编译工具时失败了。于是我放弃了这条道路转而“曲线救国”了。我们手头装个 <a href="http://www.virtualbox.org">VirtualBox</a> 虚拟机然后再在虚拟机上安装一个 Linux 发型版这件事相对容易多了。没错，就是这样，我是在我的 Linux 虚拟机上编译好 xv6 然后再存到 Mac OSX 的文件夹下的。</p>
-
-<p>编译过程非常简单，直接在 xv6 项目文件夹下执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>make</span></code></pre></td></tr></table></div></figure>
-
-
-<p>编译成功后我们会得到 xv6.img 和 fs.img 两个文件。接下来说说如何运行我们编译好的 xv6。</p>
-
-<h3>运行 xv6</h3>
-
-<p>按照官方的说法，xv6 支持在 qemu 虚拟机下运行。在 Linux 环境安装好 qemu 虚拟机后可以在命令行执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>qemu-system-i386 -serial mon:stdio -hdb fs.img xv6.img -smp 1 -m 512</span></code></pre></td></tr></table></div></figure>
-
-
-<p>或者执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>qemu-system-x86_64 -smp 1 -parallel stdio -hdb fs.img xv6.img -m 512</span></code></pre></td></tr></table></div></figure>
-
-
-<p>都可以成功的把 xv6 运行起来。但是在 Mac OSX 下这却是一件“头疼”的事儿。在 Mac OSX 下通过源码编译的方式安装 qemu 虚拟机本身就非常容易失败。xv6 本身又无法在 <a href="http://www.virtualbox.org">VirtualBox</a> 下运行。不过几经查找我发现了这么一款虚拟机，名字叫 <a href="http://www.kju-app.org/">Q</a> 是个基于 qemu 的 Mac OSX 下的虚拟机软件，免费而且开源，酷！</p>
-
-<p>把 <a href="http://www.kju-app.org/">Q</a> 这款虚拟机下载下来安装好，打开之后我们就可以配置我们的 xv6 虚拟机了。</p>
-
-<p>在 <a href="http://www.kju-app.org/">Q</a> 里点击 + 号新建一个虚拟机，在弹出的虚拟机配置对话框里 General 里给这个虚拟机起个名字，比如就叫“xv6”</p>
-
-<p>在 Hardware 配置页里设置 Platform 为 x86 PC 1CPU</p>
-
-<p>在 Hardware 配置页里设置 RAM 为 512 MB，这里默认的配置是 128 MB，但是 128 MB 启动 xv6 会报错。至于为什么 128 MB 内存无法正常运行 xv6 等我学习研究了 xv6 的代码后在告诉大家。</p>
-
-<p>在 Hardware 配置页的 Hard disk 里把 xv6.img 载入进去。</p>
-
-<p>在 Advanced 配置页的 Hard disk 2 里把 fs.img 载入进去。</p>
-
-<p>大功告成，赶快运行你的虚拟机一睹 xv6 的芳容吧！</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
       
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/19/ye-shuo-yong-octopress-zai-github-shang-jian-zhan/">也说用 Octopress 在 Github 上建站</a></h1>
-    
-    
-      <p class="meta">
-        
 
 
 
@@ -743,205 +636,59 @@
   
 
 
-<time datetime="2014-06-19T14:15:15+08:00" pubdate data-updated="true">Jun 19<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/06/19/ye-shuo-yong-octopress-zai-github-shang-jian-zhan/#disqus_thread">Comments</a>
-        
-      </p>
+<time datetime="2014-07-29T13:27:25+08:00" pubdate data-updated="true">Jul 29<span>th</span>, 2014</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/cao-zuo-xi-tong/'>操作系统</a>
+  
+</span>
+
+
+    </p>
     
-  </header>
-
-
-  <div class="entry-content"><p>谈用 Octopress 在 Github 上建站的教程在网上非常非常多，比如下面这两篇写的就很好：</p>
-
-<p><a href="http://jackycode.github.io/blog/2014/02/23/record/">《记录：Octopress建站之旅》</a></p>
-
-<p><a href="http://sumnous.github.io/blog/2014/05/11/octopress-build-blog-on-github/">《Octopress Build Blog on Github 个人建站实录》</a></p>
-
-<p>我基本上就是看着上面这两篇文章把自己的 Blog 给建立起来的。所以在这里我不想“重复造轮子”，我是想谈谈我在操作过程中遇到的“坑”和我是如何解决的。</p>
-
-<h3>0、我的环境</h3>
-
-<p>我是在 Mac 环境下操作的，系统版本是 10.9，其他环境是否也会遇到我下面所说的问题我不太确定。</p>
-
-<h3>1、Ruby 的版本</h3>
-
-<p>Mac OS X 10.9 默认安装的 Ruby 版本是 2.0.0 完全符合要求。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ruby --version</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这里我想说的是一开始我是尝试在 CentOS 下面进行操作的，CentOS 下 Ruby 的版本是 1.8.4 ，而 Octopress 需求的 Ruby版本号是 1.9.6 以上，否则会在执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake generate</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这步时报错。所以一定要提前注意一下自己环境的 Ruby 版本。</p>
-
-<h3>2、Gem 源</h3>
-
-<p>Ruby Gem 默认的源是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>https://rubygems.org/</span></code></pre></td></tr></table></div></figure>
-
-
-<p>由于一些“你懂的”的国内网络原因导致从这个源获取东西的时候会失败。特别是你在操作到如下这部的时候：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gem install bundler</span></code></pre></td></tr></table></div></figure>
-
-
-<p>如果遇到这样的网络问题，你可以考虑更换国内淘宝提供的源，具体的更换方法可直接参考淘宝源上写的<a href="https://ruby.taobao.org">教程</a>。或者直接按照下面的步骤操作：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ gem sources --remove https://rubygems.org/
-</span><span class='line'>$ gem sources -a https://ruby.taobao.org/
-</span><span class='line'>$ gem sources -l
-</span><span class='line'>*** CURRENT SOURCES ***
-</span><span class='line'>
-</span><span class='line'>https://ruby.taobao.org
-</span><span class='line'># 请确保只有 ruby.taobao.org</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>3、Rake 的版本</h3>
-
-<p>在 Mac OS X 10.9 环境下查看 rake 的版本</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake --version
-</span><span class='line'>rake, version 0.9.6</span></code></pre></td></tr></table></div></figure>
-
-
-<p>发现版本是 0.9.6 但是在 octopress 目录下打开 Gemfile 文件</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>vim Gemfile</span></code></pre></td></tr></table></div></figure>
-
-
-<p>发现里面配置的内容是这个样子的</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>source "https://rubygems.org"
-</span><span class='line'>
-</span><span class='line'>group :development do
-</span><span class='line'>  gem 'rake', '~&gt; 0.9'
-</span><span class='line'>  gem 'jekyll', '~&gt; 0.12'
-</span><span class='line'>  gem 'rdiscount', '~&gt; 2.0.7'
-</span><span class='line'>  gem 'pygments.rb', '~&gt; 0.3.4'
-</span><span class='line'>  gem 'RedCloth', '~&gt; 4.2.9'
-</span><span class='line'>  gem 'haml', '~&gt; 3.1.7'
-</span><span class='line'>  gem 'compass', '~&gt; 0.12.2'
-</span><span class='line'>  gem 'sass', '~&gt; 3.2'
-</span><span class='line'>  gem 'sass-globbing', '~&gt; 1.0.0'
-</span><span class='line'>  gem 'rubypants', '~&gt; 0.2.0'
-</span><span class='line'>  gem 'rb-fsevent', '~&gt; 0.9'
-</span><span class='line'>  gem 'stringex', '~&gt; 1.4.0'
-</span><span class='line'>  gem 'liquid', '~&gt; 2.3.0'
-</span><span class='line'>  gem 'directory_watcher', '1.4.1'
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>gem 'sinatra', '~&gt; 1.4.2'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这导致在执行 rake 命令的时候会报错</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Gem::LoadError: You have already activated rake 0.9.6, but your Gemfile requires rake 0.9......</span></code></pre></td></tr></table></div></figure>
-
-
-<p>于是我把 Gemfile 文件中的 gem &lsquo;rake&rsquo;, &lsquo;~> 0.9&rsquo; 修改成了 gem &lsquo;rake&rsquo;, &lsquo;~> 0.9.6&rsquo; 就没有问题了。</p>
-
-<h3>4、zsh</h3>
-
-<p>我的命令行环境是 zsh 在安装站点主题的时候执行下面这个命令：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake install['whitelake']</span></code></pre></td></tr></table></div></figure>
-
-
-<p>会报错 zsh： no matches found: install[&lsquo;whitelake&rsquo;] 这个解决起来到容易，把命令写成下面这样：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake 'install["whitelake"]'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>就不会有问题，但是在发布新 Blog 的时候会有个“坑”，因为发布新 Blog 时候用到的命令：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake new_post["title"]</span></code></pre></td></tr></table></div></figure>
-
-
-<p>在 zsh 下也会报同样的错，所以也要把命令修改成：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake 'new_post["title"]'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这个时候你需要特别注意了，在执行上面的命令成功生成的 markdown 文件中 title 里的内容是错的，因为我们在输入命令时多用了一对引号，所以会导致 markdown 文件中的 title 变成错误的样子：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>title: ""title""</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这时如果执行 rake generate 命令时由于 markdown 文件的 title 格式错误会导致命令执行失败，所以需要手动将 markdown 文件中的 title 的多余引号去掉。如果你不是用 zsh 或者敲命令是没有带那对多余的引号就不会碰上这个问题。</p>
-
-<h3>5、其他</h3>
-
-<p>上面说的都是我在操作过程中遇到的一些主要问题。剩下还有两点提醒：</p>
-
-<h5>1.代码部署到 GitHub 之后请耐心等几分钟</h5>
-
-<p>代码部署到 GitHub 之后，马上去访问 xxx.github.io 可能看到的是 404 页面，这时候不要着急，不要瞎折腾（血的教训），耐心登上几分钟再刷新一下页面就可以看到自己的站点了。</p>
-
-<h5>2.部署完毕后的多台设备同时更新网站问题</h5>
-
-<p>你可能也会遇到这个问题。例如像我在公司的电脑上部署好了 Octopress 站点环境，甚至还迫不及待的发了新的 Blog 或是网站内容上去，这时候你会需要在家里的台式机、自己的笔记本上也可以部署好同样的环境，然后在不同的设备上顺利的更新自己站点的内容，要如何做呢？去读读下面这个网站上的内容，这个问题会迎刃而解的。</p>
-
-<p><a href="http://blog.zerosharp.com/clone-your-octopress-to-blog-from-two-places/">《Clone Your Octopress to Blog From Two Places》</a></p>
-
-<p>最后祝大家玩的愉快！</p>
+      <div class="sharing">
+  
+  
+  
+  
+      <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style_32x32">
+	<a class="jiathis_button_qzone"></a>
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_tqq"></a>
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_renren"></a>
+	<a href="http://www.jiathis.com/share?uid=1941275" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+	<a class="jiathis_counter_style"></a>
 </div>
+<script type="text/javascript">
+var jiathis_config = {data_track_clickback:'true'};
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1366267056264840" charset="utf-8"></script>
+<!-- JiaThis Button END -->
   
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
 </div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/" title="Previous Post: 【学习 xv6 】在 Mac OSX 下运行 xv6">&laquo; 【学习 xv6 】在 Mac OSX 下运行 xv6</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
 <aside class="sidebar">
   
     <section>
@@ -970,6 +717,7 @@
   
 </aside>
 
+
     </div>
   </div>
   <footer role="contentinfo"><p>
@@ -986,7 +734,10 @@
       var disqus_shortname = 'leenjewelgithubio';
       
         
-        var disqus_script = 'count.js';
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/';
+        var disqus_url = 'http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/';
+        var disqus_script = 'embed.js';
       
     (function () {
       var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;

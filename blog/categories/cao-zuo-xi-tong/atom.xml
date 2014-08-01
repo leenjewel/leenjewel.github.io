@@ -1,113 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
 
-<!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
-<head>
-  <meta charset="utf-8">
-  <title>leenjewel Blog</title>
-  <meta name="author" content="leenjewel">
-
-  
-  <meta name="description" content="前言 这是一系列 xv6 代码学习的总结。对于还不知道 xv6 是什么的同学，我这里只简单说一下：xv6 是一个教学用的操作系统，基于 unix v6，再具体的请大家自行 Google 一下 wiki 什么的。 配合这个系列的文章，我在我的 GitHub上建立了一个叫xv6_learn的项目， &hellip;">
-  
-
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  
-  <link rel="canonical" href="http://leenjewel.github.io/">
-  <link href="/favicon.png" rel="icon">
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <script src="/javascripts/modernizr-2.0.js"></script>
-  <script src="/javascripts/ender.js"></script>
-  <script src="/javascripts/octopress.js" type="text/javascript"></script>
-  <link href="/atom.xml" rel="alternate" title="leenjewel Blog" type="application/atom+xml">
-  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-
-  
-  <script type="text/javascript">
-    var _gaq = _gaq || [];
-    _gaq.push(['_setAccount', 'UA-52061917-1']);
-    _gaq.push(['_trackPageview']);
-
-    (function() {
-      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
-      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
-      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
-    })();
-  </script>
-
-
-</head>
-
-<body   >
-  <header role="banner"><hgroup>
-  <h1><a href="/">leenjewel Blog</a></h1>
-  
-    <h2>Anything about code.</h2>
-  
-</hgroup>
-
-</header>
-  <nav role="navigation"><ul class="subscription" data-subscription="rss">
-  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
-  
-</ul>
-  
-<form action="https://www.google.com/search" method="get">
-  <fieldset role="search">
-    <input type="hidden" name="q" value="site:leenjewel.github.io" />
-    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
-  </fieldset>
-</form>
-  
-<ul class="main-navigation">
-  <li><a href="/">Blog</a></li>
-  <li><a href="/blog/archives">Archives</a></li>
-</ul>
-
-</nav>
-  <div id="main">
-    <div id="content">
-      <div class="blog-index">
-  
-  
-  
-    <article>
-      
-  <header>
+  <title><![CDATA[Category: 操作系统 | leenjewel Blog]]></title>
+  <link href="http://leenjewel.github.io/blog/categories/cao-zuo-xi-tong/atom.xml" rel="self"/>
+  <link href="http://leenjewel.github.io/"/>
+  <updated>2014-08-01T18:19:00+08:00</updated>
+  <id>http://leenjewel.github.io/</id>
+  <author>
+    <name><![CDATA[leenjewel]]></name>
     
-      <h1 class="entry-title"><a href="/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">【学习xv6】从实模式到保护模式</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
 
   
-
-
-<time datetime="2014-07-29T13:27:25+08:00" pubdate data-updated="true">Jul 29<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h2>前言</h2>
+  <entry>
+    <title type="html"><![CDATA[【学习xv6】从实模式到保护模式]]></title>
+    <link href="http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/"/>
+    <updated>2014-07-29T13:27:25+08:00</updated>
+    <id>http://leenjewel.github.io/blog/2014/07/29/[(xue-xi-xv6)]-cong-shi-mo-shi-dao-bao-hu-mo-shi</id>
+    <content type="html"><![CDATA[<h2>前言</h2>
 
 <p>这是一系列 xv6 代码学习的总结。对于还不知道 xv6 是什么的同学，我这里只简单说一下：xv6 是一个教学用的操作系统，基于 unix v6，再具体的请大家自行 Google 一下 wiki 什么的。</p>
 
@@ -303,33 +214,30 @@
 
 <p>从 Makefile 中可以看到 xv6.img 的生成条件：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>xv6.img: bootblock kernel fs.img
-</span><span class='line'>  dd if=/dev/zero of=xv6.img count=10000
-</span><span class='line'>  dd if=bootblock of=xv6.img conv=notrunc
-</span><span class='line'>  dd if=kernel of=xv6.img seek=1 conv=notrunc</span></code></pre></td></tr></table></div></figure>
+<p>```
+xv6.img: bootblock kernel fs.img</p>
 
+<pre><code>dd if=/dev/zero of=xv6.img count=10000
+dd if=bootblock of=xv6.img conv=notrunc
+dd if=kernel of=xv6.img seek=1 conv=notrunc
+</code></pre>
+
+<p>```</p>
 
 <p>fs.img 这里暂且不说，通过字面不难看出 bootblock 应该是系统一开始引导阶段的逻辑，kernel 当然就是内核了。所以第一步先研究 bootblock。我们接着在 Makefile 里找 bootblock 的生成条件：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bootblock: bootasm.S bootmain.c
-</span><span class='line'>  $(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c bootmain.c
-</span><span class='line'>  $(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c bootasm.S
-</span><span class='line'>  $(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
-</span><span class='line'>  $(OBJDUMP) -S bootblock.o &gt; bootblock.asm
-</span><span class='line'>  $(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
-</span><span class='line'>  ./sign.pl bootblock</span></code></pre></td></tr></table></div></figure>
+<p>```
+bootblock: bootasm.S bootmain.c</p>
 
+<pre><code>$(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c bootmain.c
+$(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c bootasm.S
+$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
+$(OBJDUMP) -S bootblock.o &gt; bootblock.asm
+$(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
+./sign.pl bootblock
+</code></pre>
+
+<p>```</p>
 
 <p>bootblock 的生成只需要两个文件，一个汇编一个 C 源码。那我们就准备讲讲 bootasm.S 文件了。</p>
 
@@ -351,29 +259,25 @@
 
 <p>还是再看一眼 Makefile 里 bootblock 生成那段有这么一句</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o</span></code></pre></td></tr></table></div></figure>
-
+<p><code>
+$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
+</code></p>
 
 <p>这段说明 bootblock 的代码段加载到内存 0x7C00 处，代码从 start 处开始执行（可以理解为相当于 C 中的 main 这样的入口函数）。所以 bootasm.S 一上来就是入口 start</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>.code16
-</span><span class='line'>.global start
-</span><span class='line'>start:
-</span><span class='line'>    cli
-</span><span class='line'>    xorw    %ax,%ax
-</span><span class='line'>    movw    %ax,%ds
-</span><span class='line'>    movw    %ax,%es
-</span><span class='line'>    movw    %ax,%ss</span></code></pre></td></tr></table></div></figure>
+<p>```
+.code16
+.global start
+start:</p>
 
+<pre><code>cli
+xorw    %ax,%ax
+movw    %ax,%ds
+movw    %ax,%es
+movw    %ax,%ss
+</code></pre>
+
+<p>```</p>
 
 <p>先讲 start：下面的这 5 行代码。</p>
 
@@ -400,37 +304,23 @@
 
 <p>我们具体来看 xv6 的实现代码</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>seta20.1:  
-</span><span class='line'>  inb     $0x64,%al
-</span><span class='line'>  testb   $0x2,%al
-</span><span class='line'>  jnz     seta20.1 
-</span><span class='line'>
-</span><span class='line'>  movb    $0xd1,%al
-</span><span class='line'>  outb    %al,$0x64
-</span><span class='line'>
-</span><span class='line'>seta20.2:
-</span><span class='line'>  inb     $0x64,%al
-</span><span class='line'>  testb   $0x2,%al
-</span><span class='line'>  jnz     seta20.2 
-</span><span class='line'>
-</span><span class='line'>  movb    $0xdf,%al
-</span><span class='line'>  outb    %al,$0x60</span></code></pre></td></tr></table></div></figure>
+<p>```
+seta20.1:<br/>
+  inb     $0x64,%al
+  testb   $0x2,%al
+  jnz     seta20.1</p>
 
+<p>  movb    $0xd1,%al
+  outb    %al,$0x64</p>
+
+<p>seta20.2:
+  inb     $0x64,%al
+  testb   $0x2,%al
+  jnz     seta20.2</p>
+
+<p>  movb    $0xdf,%al
+  outb    %al,$0x60
+```</p>
 
 <p>这里 bootasm.S 用了两个方法 seta20.1 和 seta20.2 来实现通过 804x 键盘控制器打开 A20 gate。 这个办法确实是分两步来搞的：</p>
 
@@ -475,34 +365,25 @@
 
 <p>有了上述的解释，我们再来看看 xv6 是怎样准备自己的 GDT 的，代码在 bootasm.S 文件最底部：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gdt:
-</span><span class='line'>  SEG_NULLASM                             # 空
-</span><span class='line'>  SEG_ASM(STA_X|STA_R, 0x0, 0xffffffff)   # 代码段
-</span><span class='line'>  SEG_ASM(STA_W, 0x0, 0xffffffff)         # 数据（堆栈）段
-</span></code></pre></td></tr></table></div></figure>
+<p>```
+gdt:
+  SEG_NULLASM                             # 空
+  SEG_ASM(STA_X|STA_R, 0x0, 0xffffffff)   # 代码段
+  SEG_ASM(STA_W, 0x0, 0xffffffff)         # 数据（堆栈）段</p>
 
+<p>```</p>
 
 <p>这里用到了几个宏，具体的宏定义在 asm.h 文件中，为了方便大家直观的感受一下 xv6 的 GDT 我把宏计算出来的值直接翻译过来，代码应该是下面这个样子：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gdt:
-</span><span class='line'>  .word 0, 0;
-</span><span class='line'>  .byte 0, 0, 0, 0                             # 空
-</span><span class='line'>  .word 0xffff, 0x0000;
-</span><span class='line'>  .byte 0x00, 0x9a, 0xcf, 0x00                 # 代码段
-</span><span class='line'>  .word 0xffff, 0x0000;
-</span><span class='line'>  .byte 0x00, 0x92, 0xcf, 0x00                 # 数据段</span></code></pre></td></tr></table></div></figure>
-
+<p><code>
+gdt:
+  .word 0, 0;
+  .byte 0, 0, 0, 0                             # 空
+  .word 0xffff, 0x0000;
+  .byte 0x00, 0x9a, 0xcf, 0x00                 # 代码段
+  .word 0xffff, 0x0000;
+  .byte 0x00, 0x92, 0xcf, 0x00                 # 数据段
+</code></p>
 
 <p>然后我们再把代码段和数据段的段描述符具体每一位的对应值表展示出来，首先是代码段：</p>
 
@@ -542,19 +423,17 @@
 
 <p>GDT 也搞定了，接下来我们就要把我们刚刚在内存中设定好的 GDT 的位置告诉 CPU，然后就“万事俱备，只欠东风”了。CPU 单独为我们准备了一个寄存器叫做 GDTR 用来保存我们 GDT 在内存中的位置和我们 GDT 的长度。GDTR 寄存器一共 48 位，其中高 32 位用来存储我们的 GDT 在内存中的位置，其余的低 16 位用来存我们的 GDT 有多少个段描述符。 16 位最大可以表示 65536 个数，这里我们把单位换成字节，而一个段描述符是 8 字节，所以 GDT 最多可以有 8192 个段描述符。不仅 CPU 用了一个单独的寄存器 GDTR 来存储我们的 GDT，而且还专门提供了一个指令用来让我们把 GDT 的地址和长度传给 GDTR 寄存器，来看 xv6 的代码：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>lgdt   gdtdesc</span></code></pre></td></tr></table></div></figure>
-
+<p><code>
+lgdt   gdtdesc
+</code></p>
 
 <p>而这个 gdtdesc 和 gdt 一起放在了 bootasm.S 文件的最底部，我们看一眼：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gdtdesc:
-</span><span class='line'>  .word   (gdtdesc - gdt - 1)             # 16 位的 gdt 大小sizeof(gdt) - 1
-</span><span class='line'>  .long   gdt                             # 32 位的 gdt 所在物理地址</span></code></pre></td></tr></table></div></figure>
-
+<p><code>
+gdtdesc:
+  .word   (gdtdesc - gdt - 1)             # 16 位的 gdt 大小sizeof(gdt) - 1
+  .long   gdt                             # 32 位的 gdt 所在物理地址
+</code></p>
 
 <p>不多不少，正好 48 位传给了 GDTR 寄存器，到此 GDT 就准备好了，接下来我们进入保护模式！</p>
 
@@ -579,13 +458,11 @@
 
 <p>然后我们继续看 xv6 打开保护模式的代码：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>movl    %cr0, %eax
-</span><span class='line'>orl     $CR0_PE, %eax
-</span><span class='line'>movl    %eax, %cr0</span></code></pre></td></tr></table></div></figure>
-
+<p><code>
+movl    %cr0, %eax
+orl     $CR0_PE, %eax
+movl    %eax, %cr0
+</code></p>
 
 <p>因为我们无法直接操作 CR0，所以我们首先要用一个通用寄存器来保存当前 CR0 寄存器的值，这里第一行就是用通用寄存器 eax 来保存 cr0 寄存器的值；然后 CR0_PE 这个宏的定义在 mmu.h 文件中，是个数值 0x00000001，将这个数值与 eax 中的 cr0 寄存器的值做“或”运算后，就保证将 cr0 的第 0 位设置成了 1 即 PE = 1 保证打开了保护模式的开关。而 cr0 的第 31 位 PG = 0 表示我们只使用分段式，不使用分页，这时再将新的计算后的 eax 寄存器中的值写回到 cr0 寄存器中就完成了到保护模式的切换。</p>
 
@@ -593,9 +470,9 @@
 
 <p>到这里我们关于 xv6 从实模式到保护模式的讲解就接近尾声了。我们已经进入到保护模式了，接下来可以将代码彻底以 32 位的保护模式来运行了。所以这时我们的 xv6 也要准备跳转了，再来看一行代码：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ljmp  $(SEG_KCODE&lt;&lt;3) $start32</span></code></pre></td></tr></table></div></figure>
-
+<p><code>
+ljmp  $(SEG_KCODE&lt;&lt;3) $start32
+</code></p>
 
 <p>这是一个跳转语句，通知 CPU 跳转到指定位置继续执行指令。 xv6 在这时就准备跳转到用 C 写成的代码处去继续运行了。这个跳转语句的两个参数就是我们之前一直再讲的典型的“基地址” + “偏移量”的方式告诉 CPU 要跳转到内存的什么位置去继续执行指令。</p>
 
@@ -617,393 +494,7 @@
 <p>这里这个 16 位的“段基址”的高 13 位代表 GDT 表的下标（学名应该叫“段选择子”），这里高 13 位刚好是 1，而我们的 GDT 里下标位 1 的内存段正好是我们的“代码段”，而“代码段”我们在 GDT 的“段描述符”中设置了它的其实内存地址是 0x00000000 ，内存段长度是 0xfffff，这是完整的 4GB 内存。</p>
 
 <p>所以这里的跳转语句选择了“代码段”，由于“代码段”的起始内存地址是 0x00000000 ，长度是完整的 4GB，所以后面的“偏移量”仍然相当于是实际的内存地址，所以这里“偏移量”直接用了 $start32，也就是 start32 直接对应的代码位置。通过这个跳转实际上 CPU 就会跳转到 bootasm.S 文件的 start32 标识符处继续执行了。</p>
-</div>
+]]></content>
+  </entry>
   
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/">【学习 Xv6 】在 Mac OSX 下运行 Xv6</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-24T22:14:15+08:00" pubdate data-updated="true">Jul 24<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><h3>编译 xv6</h3>
-
-<p>首先要用 git 把 xv6 的源码 clone 到本地</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>git clone git://pdos.csail.mit.edu/xv6/xv6.git</span></code></pre></td></tr></table></div></figure>
-
-
-<p>xv6 源代码中的 README 文件中 Building And Running xv6 章节有这么一段说明：“To build xv6 on an x86 ELF machine（like Linux or FreeBSD）, run &ldquo;make&rdquo;&hellip;&hellip;”</p>
-
-<p>这里打算简单解释一下什么是 ELF machine 。按理说我们的计算机运行的程序（这里主要指二进制程序）例如 Windows 下的 exe 文件这样的其实无非都是计算机指令。如果试想一下，我们在同一台计算机上，相同架构下的 CPU 对应可识别的应该也是同一套指令，也就是说不管是 Windows 下的还是 Linux 亦或是 Mac OS 下的二进制程序所对应的 CPU 指令都应该是一样的。那为什么这几个操作系统间的二进制可执行程序不能通用呢？</p>
-
-<p>答案简单的解释起来就是：“他们之间各自的二进制可执行程序的组织方式不同”，也即所谓的格式不统一。</p>
-
-<p>一个二进制程序除了包含有给 CPU 去执行的指令外，还有一些其他的信息，比如数据段，版本信息，链接指示信息等，它们与代码指令一起组成了二进制的可执行程序。而到底以什么样的格式或者顺序将他们组织在一起，每个操作系统就各有不同了，这也是造成他们之间的二进制程序无法通用的主要原因。</p>
-
-<p>言归正传，这里的 ELF 就指的是产生的二进制程序的组装方式。 ELF 是 Linux 和 FreeBSD 这种类 Unix 系统的二进制程序组装格式。 Windows 下的有 PE、COFF 格式，当然 Mac OSX 也有自己的格式。</p>
-
-<p>说到这里对 ELF、PE、COFF 等二进制程序是如何编译链接组装的，强烈向大家推荐一本书<a href="http://product.china-pub.com/195439">《程序员的自我修养&mdash;链接、装载与库》</a>书中对这方面知识的介绍相当的详细和深入！</p>
-
-<p>继续回到我们的 xv6 。前面说了这么多其实是想告诉大家在 Mac OSX 上编译 xv6 绝非容易的事。当然在 xv6 项目的 README 文件中也给了相关的解法。简单的说就是让你按照<a href="http://pdos.csail.mit.edu/6.828/2012/tools.html">这个页面的步骤</a>去安装相应的编译工具，可以理解为在 Mac OSX 上通过交叉编译来支持产生 ELF 格式的二进制程序（就好比通过 Xcode 可以交叉编译出在 ARM 架构的 iPhone 上运行的 APP 一样）。</p>
-
-<p>但是我在尝试着按照<a href="http://pdos.csail.mit.edu/6.828/2012/tools.html">这个页面的步骤</a>去安装相应的编译工具时失败了。于是我放弃了这条道路转而“曲线救国”了。我们手头装个 <a href="http://www.virtualbox.org">VirtualBox</a> 虚拟机然后再在虚拟机上安装一个 Linux 发型版这件事相对容易多了。没错，就是这样，我是在我的 Linux 虚拟机上编译好 xv6 然后再存到 Mac OSX 的文件夹下的。</p>
-
-<p>编译过程非常简单，直接在 xv6 项目文件夹下执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>make</span></code></pre></td></tr></table></div></figure>
-
-
-<p>编译成功后我们会得到 xv6.img 和 fs.img 两个文件。接下来说说如何运行我们编译好的 xv6。</p>
-
-<h3>运行 xv6</h3>
-
-<p>按照官方的说法，xv6 支持在 qemu 虚拟机下运行。在 Linux 环境安装好 qemu 虚拟机后可以在命令行执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>qemu-system-i386 -serial mon:stdio -hdb fs.img xv6.img -smp 1 -m 512</span></code></pre></td></tr></table></div></figure>
-
-
-<p>或者执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>qemu-system-x86_64 -smp 1 -parallel stdio -hdb fs.img xv6.img -m 512</span></code></pre></td></tr></table></div></figure>
-
-
-<p>都可以成功的把 xv6 运行起来。但是在 Mac OSX 下这却是一件“头疼”的事儿。在 Mac OSX 下通过源码编译的方式安装 qemu 虚拟机本身就非常容易失败。xv6 本身又无法在 <a href="http://www.virtualbox.org">VirtualBox</a> 下运行。不过几经查找我发现了这么一款虚拟机，名字叫 <a href="http://www.kju-app.org/">Q</a> 是个基于 qemu 的 Mac OSX 下的虚拟机软件，免费而且开源，酷！</p>
-
-<p>把 <a href="http://www.kju-app.org/">Q</a> 这款虚拟机下载下来安装好，打开之后我们就可以配置我们的 xv6 虚拟机了。</p>
-
-<p>在 <a href="http://www.kju-app.org/">Q</a> 里点击 + 号新建一个虚拟机，在弹出的虚拟机配置对话框里 General 里给这个虚拟机起个名字，比如就叫“xv6”</p>
-
-<p>在 Hardware 配置页里设置 Platform 为 x86 PC 1CPU</p>
-
-<p>在 Hardware 配置页里设置 RAM 为 512 MB，这里默认的配置是 128 MB，但是 128 MB 启动 xv6 会报错。至于为什么 128 MB 内存无法正常运行 xv6 等我学习研究了 xv6 的代码后在告诉大家。</p>
-
-<p>在 Hardware 配置页的 Hard disk 里把 xv6.img 载入进去。</p>
-
-<p>在 Advanced 配置页的 Hard disk 2 里把 fs.img 载入进去。</p>
-
-<p>大功告成，赶快运行你的虚拟机一睹 xv6 的芳容吧！</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/06/19/ye-shuo-yong-octopress-zai-github-shang-jian-zhan/">也说用 Octopress 在 Github 上建站</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-19T14:15:15+08:00" pubdate data-updated="true">Jun 19<span>th</span>, 2014</time>
-        
-         | <a href="/blog/2014/06/19/ye-shuo-yong-octopress-zai-github-shang-jian-zhan/#disqus_thread">Comments</a>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>谈用 Octopress 在 Github 上建站的教程在网上非常非常多，比如下面这两篇写的就很好：</p>
-
-<p><a href="http://jackycode.github.io/blog/2014/02/23/record/">《记录：Octopress建站之旅》</a></p>
-
-<p><a href="http://sumnous.github.io/blog/2014/05/11/octopress-build-blog-on-github/">《Octopress Build Blog on Github 个人建站实录》</a></p>
-
-<p>我基本上就是看着上面这两篇文章把自己的 Blog 给建立起来的。所以在这里我不想“重复造轮子”，我是想谈谈我在操作过程中遇到的“坑”和我是如何解决的。</p>
-
-<h3>0、我的环境</h3>
-
-<p>我是在 Mac 环境下操作的，系统版本是 10.9，其他环境是否也会遇到我下面所说的问题我不太确定。</p>
-
-<h3>1、Ruby 的版本</h3>
-
-<p>Mac OS X 10.9 默认安装的 Ruby 版本是 2.0.0 完全符合要求。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ruby --version</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这里我想说的是一开始我是尝试在 CentOS 下面进行操作的，CentOS 下 Ruby 的版本是 1.8.4 ，而 Octopress 需求的 Ruby版本号是 1.9.6 以上，否则会在执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake generate</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这步时报错。所以一定要提前注意一下自己环境的 Ruby 版本。</p>
-
-<h3>2、Gem 源</h3>
-
-<p>Ruby Gem 默认的源是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>https://rubygems.org/</span></code></pre></td></tr></table></div></figure>
-
-
-<p>由于一些“你懂的”的国内网络原因导致从这个源获取东西的时候会失败。特别是你在操作到如下这部的时候：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gem install bundler</span></code></pre></td></tr></table></div></figure>
-
-
-<p>如果遇到这样的网络问题，你可以考虑更换国内淘宝提供的源，具体的更换方法可直接参考淘宝源上写的<a href="https://ruby.taobao.org">教程</a>。或者直接按照下面的步骤操作：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ gem sources --remove https://rubygems.org/
-</span><span class='line'>$ gem sources -a https://ruby.taobao.org/
-</span><span class='line'>$ gem sources -l
-</span><span class='line'>*** CURRENT SOURCES ***
-</span><span class='line'>
-</span><span class='line'>https://ruby.taobao.org
-</span><span class='line'># 请确保只有 ruby.taobao.org</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>3、Rake 的版本</h3>
-
-<p>在 Mac OS X 10.9 环境下查看 rake 的版本</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake --version
-</span><span class='line'>rake, version 0.9.6</span></code></pre></td></tr></table></div></figure>
-
-
-<p>发现版本是 0.9.6 但是在 octopress 目录下打开 Gemfile 文件</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>vim Gemfile</span></code></pre></td></tr></table></div></figure>
-
-
-<p>发现里面配置的内容是这个样子的</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>source "https://rubygems.org"
-</span><span class='line'>
-</span><span class='line'>group :development do
-</span><span class='line'>  gem 'rake', '~&gt; 0.9'
-</span><span class='line'>  gem 'jekyll', '~&gt; 0.12'
-</span><span class='line'>  gem 'rdiscount', '~&gt; 2.0.7'
-</span><span class='line'>  gem 'pygments.rb', '~&gt; 0.3.4'
-</span><span class='line'>  gem 'RedCloth', '~&gt; 4.2.9'
-</span><span class='line'>  gem 'haml', '~&gt; 3.1.7'
-</span><span class='line'>  gem 'compass', '~&gt; 0.12.2'
-</span><span class='line'>  gem 'sass', '~&gt; 3.2'
-</span><span class='line'>  gem 'sass-globbing', '~&gt; 1.0.0'
-</span><span class='line'>  gem 'rubypants', '~&gt; 0.2.0'
-</span><span class='line'>  gem 'rb-fsevent', '~&gt; 0.9'
-</span><span class='line'>  gem 'stringex', '~&gt; 1.4.0'
-</span><span class='line'>  gem 'liquid', '~&gt; 2.3.0'
-</span><span class='line'>  gem 'directory_watcher', '1.4.1'
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>gem 'sinatra', '~&gt; 1.4.2'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这导致在执行 rake 命令的时候会报错</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Gem::LoadError: You have already activated rake 0.9.6, but your Gemfile requires rake 0.9......</span></code></pre></td></tr></table></div></figure>
-
-
-<p>于是我把 Gemfile 文件中的 gem &lsquo;rake&rsquo;, &lsquo;~> 0.9&rsquo; 修改成了 gem &lsquo;rake&rsquo;, &lsquo;~> 0.9.6&rsquo; 就没有问题了。</p>
-
-<h3>4、zsh</h3>
-
-<p>我的命令行环境是 zsh 在安装站点主题的时候执行下面这个命令：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake install['whitelake']</span></code></pre></td></tr></table></div></figure>
-
-
-<p>会报错 zsh： no matches found: install[&lsquo;whitelake&rsquo;] 这个解决起来到容易，把命令写成下面这样：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake 'install["whitelake"]'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>就不会有问题，但是在发布新 Blog 的时候会有个“坑”，因为发布新 Blog 时候用到的命令：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake new_post["title"]</span></code></pre></td></tr></table></div></figure>
-
-
-<p>在 zsh 下也会报同样的错，所以也要把命令修改成：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake 'new_post["title"]'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这个时候你需要特别注意了，在执行上面的命令成功生成的 markdown 文件中 title 里的内容是错的，因为我们在输入命令时多用了一对引号，所以会导致 markdown 文件中的 title 变成错误的样子：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>title: ""title""</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这时如果执行 rake generate 命令时由于 markdown 文件的 title 格式错误会导致命令执行失败，所以需要手动将 markdown 文件中的 title 的多余引号去掉。如果你不是用 zsh 或者敲命令是没有带那对多余的引号就不会碰上这个问题。</p>
-
-<h3>5、其他</h3>
-
-<p>上面说的都是我在操作过程中遇到的一些主要问题。剩下还有两点提醒：</p>
-
-<h5>1.代码部署到 GitHub 之后请耐心等几分钟</h5>
-
-<p>代码部署到 GitHub 之后，马上去访问 xxx.github.io 可能看到的是 404 页面，这时候不要着急，不要瞎折腾（血的教训），耐心登上几分钟再刷新一下页面就可以看到自己的站点了。</p>
-
-<h5>2.部署完毕后的多台设备同时更新网站问题</h5>
-
-<p>你可能也会遇到这个问题。例如像我在公司的电脑上部署好了 Octopress 站点环境，甚至还迫不及待的发了新的 Blog 或是网站内容上去，这时候你会需要在家里的台式机、自己的笔记本上也可以部署好同样的环境，然后在不同的设备上顺利的更新自己站点的内容，要如何做呢？去读读下面这个网站上的内容，这个问题会迎刃而解的。</p>
-
-<p><a href="http://blog.zerosharp.com/clone-your-octopress-to-blog-from-two-places/">《Clone Your Octopress to Blog From Two Places》</a></p>
-
-<p>最后祝大家玩的愉快！</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  <div class="pagination">
-    
-    <a href="/blog/archives">Blog Archives</a>
-    
-  </div>
-</div>
-<aside class="sidebar">
-  
-    <section>
-  <h1>Recent Posts</h1>
-  <ul id="recent_posts">
-    
-      <li class="post">
-        <a href="/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">【学习xv6】从实模式到保护模式</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/">【学习 xv6 】在 Mac OSX 下运行 xv6</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/06/19/ye-shuo-yong-octopress-zai-github-shang-jian-zhan/">也说用 Octopress 在 Github 上建站</a>
-      </li>
-    
-  </ul>
-</section>
-
-
-
-
-
-  
-</aside>
-
-    </div>
-  </div>
-  <footer role="contentinfo"><p>
-  Copyright &copy; 2014 - leenjewel -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
-  - <span class="credit">Theme by <a href="http://www.gehaxelt.in">Gehaxelt</a></span>
-  <span class="credit">and <a href="http://www.it-solutions-neef.de">IT Solutions Neef</a></span>
-</p>
-
-</footer>
-  
-
-<script type="text/javascript">
-      var disqus_shortname = 'leenjewelgithubio';
-      
-        
-        var disqus_script = 'count.js';
-      
-    (function () {
-      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    }());
-</script>
-
-
-
-
-
-
-
-
-
-
-
-</body>
-</html>
+</feed>
