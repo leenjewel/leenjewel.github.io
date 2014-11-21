@@ -45,6 +45,44 @@ getBuyIntent(3, "com.abc.def", "product1", "inapp", "");
 getBuyIntent(3, "com.abc.def", "com.abc.def.product1", "inapp", "");
 ```
 
+### 支付验证
+
+一般的支付验证都是支付方会有个接口，玩家支付成功后需要将支付数据通过支付方提供的接口（一般为 HTTP 或 HTTPS）进行验证，验证通过后才会确认支付成功。
+
+Google Play In-app Billing 并没有提供支付验证接口，它的验证方法是通过公钥自行验证计算。在客户端通过公钥自行验证虽然没什么问题，但总觉的不放心，特别是手游这种，还是发往自己的服务器端去做验证比较好。我看 Google 的官方文档对这方面的介绍并不是很多，贴别是服务器端验证，这里我贴出 PHP 的范例代码，其实挺简单的。
+
+通过参看官方文档对 [getBuyIntent](https://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent) 支付成功返回的数据结构的说明：
+
+>Table 3. Response data from an In-app Billing Version 3 purchase request.
+
+>Key : **INAPP_PURCHASE_DATA**
+
+>Description : A String in JSON format that contains details about the purchase order. See table 4 for a description of the JSON fields.
+
+>Key : **INAPP_DATA_SIGNATURE**
+
+>Description : String containing the signature of the purchase data that was signed with the private key of the developer. The data signature uses the RSASSA-PKCS1-v1_5 scheme.
+
+当客户端收到玩家支付完成的回调时，将上述两个数据传送给后端服务器接口，后端的验证流程是：
+
+在 Google Play Developer Console 找到当前应用的设置页面，在“服务和API”设置分页内找到“此应用的许可密钥”，将密钥**原封不动且删除多余空格**地复制下来，然后我们直接上 PHP 的示例代码
+
+```php
+$inapp_purchase_data = '客户端回传的 INAPP_PURCHASE_DATA 对应的数据';
+$inapp_data_signature = '客户端回传的 INAPP_DATA_SIGNATURE 对应的数据';
+$google_public_key = 'Google Play Developer Console 中此应用的许可密钥';
+
+$public_key = "-----BEGIN PUBLIC KEY-----\n" . chunk_split($google_public_key, 64, "\n") . "-----END PUBLIC KEY-----";
+
+$public_key_handle = openssl_get_publickey($public_key);
+
+$result = openssl_verify($inapp_purchase_data, base64_decode($inapp_data_signature, $public_key_handle, OPENSSL_ALGO_SHA1);
+
+if (1 === $result) {
+    // 支付验证成功！
+}
+```
+
 ### 测试
 
 总的来说，Google Play In-app Billing 支付接入的开发算是比较简单的，步骤不多，也比较容易理解。最让人头疼的是测试，特别是你人在大陆，那就是难上加难了~坑略多。
