@@ -32,7 +32,7 @@ com.abc.def.product2
 
 看到 [getBuyIntent(int apiVersion, String packageName, String sku, String type, String developerPayload)](https://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent) 这个方法需求一个 sku 还需求一个 packageName ，我当时**错误**的认为 sku 和 packageName 分开传，所以**错误**的写成了
 
-```
+```java
 // 假设要充值的充值档 ID 为 com.abc.def.product1 
 // **注意** 这样写是错误的！！！
 getBuyIntent(3, "com.abc.def", "product1", "inapp", "");
@@ -40,7 +40,7 @@ getBuyIntent(3, "com.abc.def", "product1", "inapp", "");
 
 结果在调用 [getSkuDetails(int apiVersion, String packageName, String type, in Bundle skusBundle)](https://developer.android.com/google/play/billing/billing_reference.html#getSkuDetails) 方法时就一直返回空结果，告诉我找不到对应的商品。这里正确的做法就是**严格**按照你 Google Play Developer Console 里配置的 ProductId 来写，配置的是什么值，就传什么值。
 
-```
+```java
 // 假设要充值的充值档 ID 为 com.abc.def.product1 
 getBuyIntent(3, "com.abc.def", "com.abc.def.product1", "inapp", "");
 ```
