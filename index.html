@@ -153,6 +153,57 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
+<h3>支付验证</h3>
+
+<p>一般的支付验证都是支付方会有个接口，玩家支付成功后需要将支付数据通过支付方提供的接口（一般为 HTTP 或 HTTPS）进行验证，验证通过后才会确认支付成功。</p>
+
+<p>Google Play In-app Billing 并没有提供支付验证接口，它的验证方法是通过公钥自行验证计算。在客户端通过公钥自行验证虽然没什么问题，但总觉的不放心，特别是手游这种，还是发往自己的服务器端去做验证比较好。我看 Google 的官方文档对这方面的介绍并不是很多，贴别是服务器端验证，这里我贴出 PHP 的范例代码，其实挺简单的。</p>
+
+<p>通过参看官方文档对 <a href="https://developer.android.com/google/play/billing/billing_reference.html#getBuyIntent">getBuyIntent</a> 支付成功返回的数据结构的说明：</p>
+
+<blockquote><p>Table 3. Response data from an In-app Billing Version 3 purchase request.</p>
+
+<p>Key : <strong>INAPP_PURCHASE_DATA</strong></p>
+
+<p>Description : A String in JSON format that contains details about the purchase order. See table 4 for a description of the JSON fields.</p>
+
+<p>Key : <strong>INAPP_DATA_SIGNATURE</strong></p>
+
+<p>Description : String containing the signature of the purchase data that was signed with the private key of the developer. The data signature uses the RSASSA-PKCS1-v1_5 scheme.</p></blockquote>
+
+<p>当客户端收到玩家支付完成的回调时，将上述两个数据传送给后端服务器接口，后端的验证流程是：</p>
+
+<p>在 Google Play Developer Console 找到当前应用的设置页面，在“服务和API”设置分页内找到“此应用的许可密钥”，将密钥<strong>原封不动且删除多余空格</strong>地复制下来，然后我们直接上 PHP 的示例代码</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="nv">$inapp_purchase_data</span> <span class="o">=</span> <span class="s1">&#39;客户端回传的 INAPP_PURCHASE_DATA 对应的数据&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$inapp_data_signature</span> <span class="o">=</span> <span class="s1">&#39;客户端回传的 INAPP_DATA_SIGNATURE 对应的数据&#39;</span><span class="p">;</span>
+</span><span class='line'><span class="nv">$google_public_key</span> <span class="o">=</span> <span class="s1">&#39;Google Play Developer Console 中此应用的许可密钥&#39;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$public_key</span> <span class="o">=</span> <span class="s2">&quot;-----BEGIN PUBLIC KEY-----</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">.</span> <span class="nb">chunk_split</span><span class="p">(</span><span class="nv">$google_public_key</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span> <span class="o">.</span> <span class="s2">&quot;-----END PUBLIC KEY-----&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$public_key_handle</span> <span class="o">=</span> <span class="nb">openssl_get_publickey</span><span class="p">(</span><span class="nv">$public_key</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="nv">$result</span> <span class="o">=</span> <span class="nb">openssl_verify</span><span class="p">(</span><span class="nv">$inapp_purchase_data</span><span class="p">,</span> <span class="nb">base64_decode</span><span class="p">(</span><span class="nv">$inapp_data_signature</span><span class="p">,</span> <span class="nv">$public_key_handle</span><span class="p">,</span> <span class="nx">OPENSSL_ALGO_SHA1</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="mi">1</span> <span class="o">===</span> <span class="nv">$result</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// 支付验证成功！</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
 <h3>测试</h3>
 
 <p>总的来说，Google Play In-app Billing 支付接入的开发算是比较简单的，步骤不多，也比较容易理解。最让人头疼的是测试，特别是你人在大陆，那就是难上加难了~坑略多。</p>
@@ -180,7 +231,7 @@
 <p>上面说了，发布应用后要等，到底要等到什么时候呢？在你的 Google Play Console 页面你对应发布的频道那里会有个“管理测试人员列表”的超链接，点开会弹出一个弹出框，在弹出框里有个标题是“与测试者分享以下链接”，下面有个 URL 链接，形如：</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nl">https:</span><span class="c1">//play.google.com/apps/testing/xxxxxxx</span>
+</pre></td><td class='code'><pre><code class='php'><span class='line'><span class="nx">https</span><span class="o">://</span><span class="nx">play</span><span class="o">.</span><span class="nx">google</span><span class="o">.</span><span class="nx">com</span><span class="o">/</span><span class="nx">apps</span><span class="o">/</span><span class="nx">testing</span><span class="o">/</span><span class="nx">xxxxxxx</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
