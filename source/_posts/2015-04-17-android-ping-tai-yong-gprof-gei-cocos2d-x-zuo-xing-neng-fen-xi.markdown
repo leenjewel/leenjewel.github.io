@@ -89,7 +89,7 @@ ndk-build NDK_DEBUG=1
 
 只需要引入一个头文件，添加两个函数调用即可
 
-```
+```cpp
 // 引入头文件
 #if (COCOS2D_DEBUG>0 && CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
 #include "prof.h"
@@ -117,7 +117,7 @@ void AppDelegate::applicationDidEnterBackground()
 
 `AndroidManifest.xml` 因为要生成性能分析报告，所以要赋予你的 Android 程序 WRITE_EXTERNAL_STORAGE 权限，即
 
-```
+```xml
 <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 ```
 
@@ -135,7 +135,7 @@ adb pull /sdcard/gmon.out .
 
 当然官方文档里面也提了，如果想要自定义性能分析报告存放的位置，可以在调用 `moncleanup` 函数前指定要保存的位置。
 
-```
+```cpp
 setenv("CPUPROFILE", "/data/data/com.example.application/files/gmon.out", 1);
 moncleanup();
 ```
