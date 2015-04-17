@@ -7,8 +7,7 @@
 	<meta name="author" content="leenjewel">
 
 	
-	<meta name="description" content="最近在做一个 iOS 的 cocos2d-x 项目接入新浪微博 SDK 的时候被“坑”了，最后终于顺利的解决了。发现网上也有不少人遇到一样的问题，但是能找到的数量有限的解决办法写得都不详细，很难让人理解，我来深入的写一写。 我的开发环境 Mac OS X 10.10.1
-Xcode 6.1.1 &hellip;">
+	<meta name="description" content="gprof 在 iOS 平台下我们可以用 Xcode 自带的 Profile 工具来测试我们程序的性能，那在 Android 平台下面要怎么搞呢？答案就是gprof。什么是 gprof 呢？引用 Wiki 的解释： Gprof is a performance analysis tool for &hellip;">
 	
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -82,6 +81,400 @@ Xcode 6.1.1 &hellip;">
 		
 	
 	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2015/04/17/android-ping-tai-yong-gprof-gei-cocos2d-x-zuo-xing-neng-fen-xi/">
+		
+			Android 平台用 Gprof 给 Cocos2d-x 做性能分析</a>
+	</h2>
+	<div class="entry-content">
+		<h3>gprof</h3>
+
+<p>在 iOS 平台下我们可以用 Xcode 自带的 Profile 工具来测试我们程序的性能，那在 Android 平台下面要怎么搞呢？答案就是<code>gprof</code>。什么是 gprof 呢？引用 <a href="http://en.wikipedia.org/wiki/Gprof">Wiki</a> 的解释：</p>
+
+<blockquote><p>Gprof is a performance analysis tool for Unix applications. It uses a hybrid of instrumentation and sampling[1] and was created as extended version of the older &ldquo;prof&rdquo; tool. Unlike prof, gprof is capable of limited call graph collecting and printing.</p></blockquote>
+
+<p>因为 Android 本来就是基于 Linux 的，所以这里用 gprof 来做性能测试是没什么问题的。不过需要注意的是，这里所说的性能测试是针对 NDK 编译的 C++ 代码的。就想 Cocos2d-x 这样的 C++ 实现的游戏引擎就可以通过 gprof 来分析。下面我们来说说搞法。</p>
+
+<h3>环境</h3>
+
+<p>我是 Mac OS X 下，这里要做性能分析的 Cocos2d-x 项目是基于 Cocos2d-x 3.2 引擎，项目本身是基于 Lua 脚本编写的。其实这些都无关紧要，只不过是编译出的 so 文件有所不同罢了。只要是 NDK 的代码都可以用 gprof 来做性能分析的。</p>
+
+<h3>android-ndk-profiler</h3>
+
+<p>要想生成 gprof 的性能分析报告，我们优先要把一个叫做 <code>android-ndk-profiler</code> 的模块集成到我们的项目中。android-ndk-profiler 模块的源代码在 <a href="https://github.com/richq/android-ndk-profiler">GitHub</a> 上面，首先要把模块代码 clone 下来</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git clone git@github.com:richq/android-ndk-profiler.git</span></code></pre></td></tr></table></div></figure>
+
+
+<p>android-ndk-profiler 的项目自带了一篇<a href="https://github.com/richq/android-ndk-profiler/blob/master/docs/Usage.md">文档说明</a>教授如何集成和使用，但是写的比较简单，我来详细的说一下。android-ndk-profiler 项目 clone 下来后进到项目目录可以看到如下结构</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'> |-docs
+</span><span class='line'> |-example
+</span><span class='line'> |-jni
+</span><span class='line'> |-test</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p> 而我们需要的就是<code>jni</code>这个目录下面的文件。</p>
+
+<h3>集成 android-ndk-profiler 到 Cocos2d-x 项目</h3>
+
+<h6>拷贝文件</h6>
+
+<p>来到我们自己的 Cocos2d-x 项目目录中，新建一个叫做 <code>android-ndk-profiler</code> 的文件夹，将刚刚克隆的 android-ndk-profile 模块的 jni 目录中的所有文件拷贝到我们刚刚建立的文件夹中。</p>
+
+<h6>编辑 Android.mk 文件</h6>
+
+<p>打开 <code>proj.android/jin/Android.mk</code> 文件，加入如下代码：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#*注意* YOUR_ANDROID_NDK_PROFILER_PATH 是你 cocos2d-x 项目中 android-ndk-profiler 目录的位置
+</span><span class='line'>
+</span><span class='line'>$(call import-add-path,$(YOUR_ANDROID_NDK_PROFILER_PATH))
+</span><span class='line'>
+</span><span class='line'># 加入头文件
+</span><span class='line'>LOCAL_C_INCLUDES += $(YOUR_ANDROID_NDK_PROFILER_PATH)
+</span><span class='line'>
+</span><span class='line'>APP_DEBUG := $(strip $(NDK_DEBUG))
+</span><span class='line'>
+</span><span class='line'># 如果是 Debug 模式，则引入 android-ndk-profiler
+</span><span class='line'>ifeq ($(APP_DEBUG),1)
+</span><span class='line'>  LOCAL_CFLAGS := -pg
+</span><span class='line'>  LOCAL_STATIC_LIBRARIES += android-ndk-profiler
+</span><span class='line'>endif
+</span><span class='line'>
+</span><span class='line'>ifeq ($(APP_DEBUG),1)
+</span><span class='line'>  $(call import-module,YOUR_ANDROID_NDK_PROFILER_PATH)
+</span><span class='line'>endif</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里只解释两点。</p>
+
+<p><code>LOCAL_CFLAGS := -pg</code> 通过在编译使用 -pg 编译和链接选项，gcc 在你应用程序的每个函数中都加入了一个名为mcount ( or  “_mcount”  , or  “__mcount” , 依赖于编译器或操作系统) 的函数，也就是说你的应用程序里的每一个函数都会调用 mcount, 而 mcount 会在内存中保存一张函数调用图，并通过函数调用堆栈的形式查找子函数和父函数的地址。这张调用图也保存了所有与函数相关的调用时间，调用次数等等的所有信息。</p>
+
+<p><code>APP_DEBUG</code> 这里增加了一个判断，只有当以 <code>NDK_DEBUG=1</code> 的 Debug 模式编译 NDK 代码的时候才开启 android-ndk-profiler 分析功能，这样保证我们出 Release 版本的时候不引入性能分析。</p>
+
+<h3>使用 android-ndk-profiler</h3>
+
+<p>以 Debug 模式重新编译一下项目代码：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>cd proj.android
+</span><span class='line'>ndk-build NDK_DEBUG=1</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果编译成功那么说明 android-ndk-profiler 已经成功集成到我们的 Cocos2d-x 项目中了，集成的过程非常简单，同样，android-ndk-profiler 的使用也非常的方便。</p>
+
+<h6>编辑 AppDelegate.cpp 文件</h6>
+
+<p>只需要引入一个头文件，添加两个函数调用即可</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>// 引入头文件
+</span><span class='line'>#if (COCOS2D_DEBUG&gt;0 && CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+</span><span class='line'>#include "prof.h"
+</span><span class='line'>#endif
+</span><span class='line'>
+</span><span class='line'>bool AppDelegate::applicationDidFinishLaunching()
+</span><span class='line'>{
+</span><span class='line'>#if (COCOS2D_DEBUG&gt;0 && CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+</span><span class='line'>  monstartup("libcocos2dlua.so");
+</span><span class='line'>#endif
+</span><span class='line'>  // 其他已有逻辑代码......
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>void AppDelegate::applicationDidEnterBackground()
+</span><span class='line'>{
+</span><span class='line'>  // 其他已有逻辑代码......
+</span><span class='line'>#if (COCOS2D_DEBUG&gt;0 && CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
+</span><span class='line'>    moncleanup();
+</span><span class='line'>#endif
+</span><span class='line'>}
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里只需要注意两点。</p>
+
+<p><code>AndroidManifest.xml</code> 因为要生成性能分析报告，所以要赋予你的 Android 程序 WRITE_EXTERNAL_STORAGE 权限，即</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>libcocos2dlua.so</code> 这个 so 文件会根据你的 Cocos2d-x 项目的类型不同名字上会有所不同，比如我们是 Lua 项目，所以 NDK 编译生成的 so 文件就叫 libcocos2dlua.so ，具体的文件名请自行到 proj.android/libs/armeabi 目录下查看。</p>
+
+<p>再次以 Debug 模式重新编译一下项目代码，如果没有错误，那么大功就告成了。</p>
+
+<h6>生成 gmon.out 性能分析报告</h6>
+
+<p>项目编译完成后生成 apk 文件，将 apk 文件安装到 Android 设备上。通过上一小节我们对 AppDelegate.cpp 文件的修改不难看出，当程序在 Android 设备上运行的时候，调用了 <code>monstartup</code> 函数开始性能分析，当程序退到后台时调用了 <code>moncleanup</code> 函数生成性能分析报告。性能分析报告文件默认存储到 Android 设备的 /sdcard/gmon.out 位置，我们用 adb 工具可以把文件拉到电脑上面。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>adb pull /sdcard/gmon.out .</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当然官方文档里面也提了，如果想要自定义性能分析报告存放的位置，可以在调用 <code>moncleanup</code> 函数前指定要保存的位置。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>setenv("CPUPROFILE", "/data/data/com.example.application/files/gmon.out", 1);
+</span><span class='line'>moncleanup();</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>解读性能分析报告 gmon.out</h3>
+
+<p>生成的性能分析告报 gmon.out 是不能直接通过文本编辑器打开来读的，它是个二进制文件，需要专门的工具来生成可读的文本文件。这个工具在 NDK 中已经提供了，以我使用的 android-ndk-r10d 为例：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>cd android-ndk-r10d/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/
+</span><span class='line'>
+</span><span class='line'>./arm-linux-androideabi-gprof \
+</span><span class='line'>  你的项目路径/proj.android/obj/local/armeabi/libcocos2dlua.so\
+</span><span class='line'>  你的gmon.out存放路径/gmon.out &gt; gmon.txt</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里只解释一点。</p>
+
+<p><code>libcocos2dlua.so</code> 细心的读者发现这里使用的 so 文件并不是之前的那个放在 proj.android/libs/armeabi/libcocos2dlua.so 下面的那个 so 文件。这是因为最终随 apk 一起打包的那个 libcocos2dlua.so 文件（也就是 proj.android/libs/armeabi 目录下的）是不包含<strong>符号表</strong>的，而存放在 proj.android/obj/local/armeabi 目录下的是带<strong>符号表</strong>的版本。而什么是<strong>符号表</strong>，这是一个编译链接中的概念，请自行 Google 一下，或者读一读<a href="http://book.douban.com/subject/3652388/">《程序员的自我修养》这本书</a>，再次强烈推荐这本书。</p>
+
+<h3>gmon.txt 解读</h3>
+
+<p>我节选一下生成的 gmon.txt 的两处比较重要的部分来看</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Flat profile:
+</span><span class='line'>
+</span><span class='line'>Each sample counts as 0.01 seconds.
+</span><span class='line'>  %   cumulative   self              self     total           
+</span><span class='line'> time   seconds   seconds    calls  ms/call  ms/call  name    
+</span><span class='line'> 19.14      1.16     1.16                             png_read_filter_row_paeth_multibyte_pixel
+</span><span class='line'> 15.35      2.09     0.93                             cocos2d::Image::premultipliedAlpha()
+</span><span class='line'> 14.36      2.96     0.87                             cocos2d::Texture2D::convertRGBA8888ToRGBA4444(unsigned char const*, int, unsigned char*)
+</span><span class='line'>  7.10      3.39     0.43                             profCount
+</span><span class='line'>  3.96      3.63     0.24                             png_read_filter_row_up
+</span><span class='line'>  3.30      3.83     0.20                             llex
+</span><span class='line'>  3.14      4.02     0.19                             png_read_filter_row_sub
+</span><span class='line'>  2.81      4.19     0.17                             __gnu_mcount_nc
+</span><span class='line'>  
+</span><span class='line'>  ......
+</span><span class='line'>  
+</span><span class='line'>  
+</span><span class='line'>           Call graph (explanation follows)
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>granularity: each sample hit covers 2 byte(s) for 0.17% of 5.99 seconds
+</span><span class='line'>
+</span><span class='line'>index % time    self  children    called     name
+</span><span class='line'>                                                 &lt;spontaneous&gt;
+</span><span class='line'>[1]     19.4    1.16    0.00                 png_read_filter_row_paeth_multibyte_pixel [1]
+</span><span class='line'>-----------------------------------------------
+</span><span class='line'>                                                 &lt;spontaneous&gt;
+</span><span class='line'>[2]     15.5    0.93    0.00                 cocos2d::Image::premultipliedAlpha() [2]
+</span><span class='line'>-----------------------------------------------
+</span><span class='line'>                                                 &lt;spontaneous&gt;
+</span><span class='line'>[3]     14.5    0.87    0.00                 cocos2d::Texture2D::convertRGBA8888ToRGBA4444(unsigned char const*, int, unsigned char*) [3]
+</span><span class='line'>-----------------------------------------------
+</span><span class='line'>                                                 &lt;spontaneous&gt;
+</span><span class='line'>[4]      7.2    0.43    0.00                 profCount [4]
+</span><span class='line'>-----------------------------------------------
+</span><span class='line'>                                                 &lt;spontaneous&gt;
+</span><span class='line'>[5]      4.0    0.24    0.00                 png_read_filter_row_up [5]
+</span><span class='line'>-----------------------------------------------
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>简单解释一下含义</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Flat profile:
+</span><span class='line'>
+</span><span class='line'>Each sample counts as 0.01 seconds.
+</span><span class='line'>  %   cumulative   self              self     total           
+</span><span class='line'> time   seconds   seconds    calls  ms/call  ms/call  name
+</span><span class='line'> 函数     程序       函数       函数    函数     函数      函数名
+</span><span class='line'> 消耗     累计       本身       调用    平均     平均
+</span><span class='line'> 时间     执行       执行       次数    执行     执行
+</span><span class='line'> 占程     时间       时间              时间     时间
+</span><span class='line'> 序运                                 (不      (包
+</span><span class='line'> 行时                                  包       括
+</span><span class='line'> 间的                                  括       被
+</span><span class='line'> 百分                                  被       调
+</span><span class='line'> 比                                    调       用
+</span><span class='line'>                                      用       时
+</span><span class='line'>                                      时       间)
+</span><span class='line'>                                      间)
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>           Call graph (explanation follows)
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>granularity: each sample hit covers 2 byte(s) for 0.17% of 5.99 seconds
+</span><span class='line'>
+</span><span class='line'>index % time    self  children    called     name
+</span><span class='line'> 索引    函数     函数   函数的       被调用      函数名
+</span><span class='line'> 值      执行       本身   子函数        次数
+</span><span class='line'>        时间     执行    执行
+</span><span class='line'>        占程     时间    时间
+</span><span class='line'>        序运
+</span><span class='line'>        行时
+</span><span class='line'>        间百
+</span><span class='line'>        分比
+</span><span class='line'>        
+</span></code></pre></td></tr></table></div></figure>
+
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-17T11:27:52+08:00" pubdate data-updated="true">2015年4月17日</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/cocos2d-x-android/'>Cocos2d-x Android</a>
+
+
+</div>
+	
+	<div class="comments"><a href="/blog/2015/04/17/android-ping-tai-yong-gprof-gei-cocos2d-x-zuo-xing-neng-fen-xi/#disqus_thread">Comments</a></div>
+	
+</div>
+</article>
 
 
     <article class="post">
@@ -1517,14 +1910,6 @@ Xcode 6.1.1 &hellip;">
 	</script>
 
 
-<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
-<!-- leenjewel.github.io -->
-<ins class="adsbygoogle"
-     style="display:inline-block;width:728px;height:90px"
-     data-ad-client="ca-pub-7743616000257723"
-     data-ad-slot="4032598696"></ins>
-<script>
-(adsbygoogle = window.adsbygoogle || []).push({});
-</script>
+
 </body>
 </html>
