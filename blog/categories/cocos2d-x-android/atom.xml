@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Cocos2d-x Android | leenjewel Blog]]></title>
   <link href="http://leenjewel.github.io/blog/categories/cocos2d-x-android/atom.xml" rel="self"/>
   <link href="http://leenjewel.github.io/"/>
-  <updated>2015-04-17T15:03:36+08:00</updated>
+  <updated>2015-04-17T15:09:11+08:00</updated>
   <id>http://leenjewel.github.io/</id>
   <author>
     <name><![CDATA[leenjewel]]></name>
@@ -110,7 +110,7 @@ ndk-build NDK_DEBUG=1
 
 <p>只需要引入一个头文件，添加两个函数调用即可</p>
 
-<p>```
+<p>```cpp
 // 引入头文件</p>
 
 <h1>if (COCOS2D_DEBUG>0 &amp;&amp; CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)</h1>
@@ -155,7 +155,7 @@ ndk-build NDK_DEBUG=1
 
 <p><code>AndroidManifest.xml</code> 因为要生成性能分析报告，所以要赋予你的 Android 程序 WRITE_EXTERNAL_STORAGE 权限，即</p>
 
-<p><code>
+<p><code>xml
 &lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /&gt;
 </code></p>
 
@@ -173,7 +173,7 @@ adb pull /sdcard/gmon.out .
 
 <p>当然官方文档里面也提了，如果想要自定义性能分析报告存放的位置，可以在调用 <code>moncleanup</code> 函数前指定要保存的位置。</p>
 
-<p><code>
+<p><code>cpp
 setenv("CPUPROFILE", "/data/data/com.example.application/files/gmon.out", 1);
 moncleanup();
 </code></p>

@@ -4,7 +4,7 @@
   <title><![CDATA[leenjewel Blog]]></title>
   <link href="http://leenjewel.github.io/atom.xml" rel="self"/>
   <link href="http://leenjewel.github.io/"/>
-  <updated>2015-04-17T15:03:36+08:00</updated>
+  <updated>2015-04-17T15:09:11+08:00</updated>
   <id>http://leenjewel.github.io/</id>
   <author>
     <name><![CDATA[leenjewel]]></name>
@@ -124,7 +124,7 @@
 
 <p>只需要引入一个头文件，添加两个函数调用即可</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -144,26 +144,26 @@
 <span class='line-number'>18</span>
 <span class='line-number'>19</span>
 <span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>// 引入头文件
-</span><span class='line'>#if (COCOS2D_DEBUG&gt;0 && CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-</span><span class='line'>#include "prof.h"
-</span><span class='line'>#endif
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="c1">// 引入头文件</span>
+</span><span class='line'><span class="cp">#if (COCOS2D_DEBUG&gt;0 &amp;&amp; CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)</span>
+</span><span class='line'><span class="cp">#include &quot;prof.h&quot;</span>
+</span><span class='line'><span class="cp">#endif</span>
 </span><span class='line'>
-</span><span class='line'>bool AppDelegate::applicationDidFinishLaunching()
-</span><span class='line'>{
-</span><span class='line'>#if (COCOS2D_DEBUG&gt;0 && CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-</span><span class='line'>  monstartup("libcocos2dlua.so");
-</span><span class='line'>#endif
-</span><span class='line'>  // 其他已有逻辑代码......
-</span><span class='line'>}
+</span><span class='line'><span class="kt">bool</span> <span class="n">AppDelegate</span><span class="o">::</span><span class="n">applicationDidFinishLaunching</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="cp">#if (COCOS2D_DEBUG&gt;0 &amp;&amp; CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)</span>
+</span><span class='line'>  <span class="n">monstartup</span><span class="p">(</span><span class="s">&quot;libcocos2dlua.so&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'>  <span class="c1">// 其他已有逻辑代码......</span>
+</span><span class='line'><span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>void AppDelegate::applicationDidEnterBackground()
-</span><span class='line'>{
-</span><span class='line'>  // 其他已有逻辑代码......
-</span><span class='line'>#if (COCOS2D_DEBUG&gt;0 && CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)
-</span><span class='line'>    moncleanup();
-</span><span class='line'>#endif
-</span><span class='line'>}
+</span><span class='line'><span class="kt">void</span> <span class="n">AppDelegate</span><span class="o">::</span><span class="n">applicationDidEnterBackground</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// 其他已有逻辑代码......</span>
+</span><span class='line'><span class="cp">#if (COCOS2D_DEBUG&gt;0 &amp;&amp; CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)</span>
+</span><span class='line'>    <span class="n">moncleanup</span><span class="p">();</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -171,8 +171,9 @@
 
 <p><code>AndroidManifest.xml</code> 因为要生成性能分析报告，所以要赋予你的 Android 程序 WRITE_EXTERNAL_STORAGE 权限，即</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" /&gt;</span></code></pre></td></tr></table></div></figure>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.WRITE_EXTERNAL_STORAGE&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p><code>libcocos2dlua.so</code> 这个 so 文件会根据你的 Cocos2d-x 项目的类型不同名字上会有所不同，比如我们是 Lua 项目，所以 NDK 编译生成的 so 文件就叫 libcocos2dlua.so ，具体的文件名请自行到 proj.android/libs/armeabi 目录下查看。</p>
@@ -183,32 +184,35 @@
 
 <p>项目编译完成后生成 apk 文件，将 apk 文件安装到 Android 设备上。通过上一小节我们对 AppDelegate.cpp 文件的修改不难看出，当程序在 Android 设备上运行的时候，调用了 <code>monstartup</code> 函数开始性能分析，当程序退到后台时调用了 <code>moncleanup</code> 函数生成性能分析报告。性能分析报告文件默认存储到 Android 设备的 /sdcard/gmon.out 位置，我们用 adb 工具可以把文件拉到电脑上面。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>adb pull /sdcard/gmon.out .</span></code></pre></td></tr></table></div></figure>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>adb pull /sdcard/gmon.out .
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>当然官方文档里面也提了，如果想要自定义性能分析报告存放的位置，可以在调用 <code>moncleanup</code> 函数前指定要保存的位置。</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>setenv("CPUPROFILE", "/data/data/com.example.application/files/gmon.out", 1);
-</span><span class='line'>moncleanup();</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">setenv</span><span class="p">(</span><span class="s">&quot;CPUPROFILE&quot;</span><span class="p">,</span> <span class="s">&quot;/data/data/com.example.application/files/gmon.out&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="n">moncleanup</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <h3>解读性能分析报告 gmon.out</h3>
 
 <p>生成的性能分析告报 gmon.out 是不能直接通过文本编辑器打开来读的，它是个二进制文件，需要专门的工具来生成可读的文本文件。这个工具在 NDK 中已经提供了，以我使用的 android-ndk-r10d 为例：</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>cd android-ndk-r10d/toolchains/arm-linux-androideabi-4.9/prebuilt/darwin-x86_64/bin/
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">cd</span> <span class="n">android</span><span class="o">-</span><span class="n">ndk</span><span class="o">-</span><span class="n">r10d</span><span class="o">/</span><span class="n">toolchains</span><span class="o">/</span><span class="n">arm</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">androideabi</span><span class="o">-</span><span class="mf">4.9</span><span class="o">/</span><span class="n">prebuilt</span><span class="o">/</span><span class="n">darwin</span><span class="o">-</span><span class="n">x86_64</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span>
 </span><span class='line'>
-</span><span class='line'>./arm-linux-androideabi-gprof \
-</span><span class='line'>  你的项目路径/proj.android/obj/local/armeabi/libcocos2dlua.so\
-</span><span class='line'>  你的gmon.out存放路径/gmon.out &gt; gmon.txt</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'><span class="p">.</span><span class="o">/</span><span class="n">arm</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">androideabi</span><span class="o">-</span><span class="n">gprof</span> \
+</span><span class='line'>  <span class="err">你的项目路径</span><span class="o">/</span><span class="n">proj</span><span class="p">.</span><span class="n">android</span><span class="o">/</span><span class="n">obj</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">armeabi</span><span class="o">/</span><span class="n">libcocos2dlua</span><span class="p">.</span><span class="n">so</span>\
+</span><span class='line'>  <span class="err">你的</span><span class="n">gmon</span><span class="p">.</span><span class="n">out</span><span class="err">存放路径</span><span class="o">/</span><span class="n">gmon</span><span class="p">.</span><span class="n">out</span> <span class="o">&gt;</span> <span class="n">gmon</span><span class="p">.</span><span class="n">txt</span>
+</span></code></pre></td></tr></table></div></figure>
 
 
 <p>这里只解释一点。</p>
@@ -219,7 +223,7 @@
 
 <p>我节选一下生成的 gmon.txt 的两处比较重要的部分来看</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -257,50 +261,50 @@
 <span class='line-number'>36</span>
 <span class='line-number'>37</span>
 <span class='line-number'>38</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Flat profile:
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">Flat</span> <span class="nl">profile:</span>
 </span><span class='line'>
-</span><span class='line'>Each sample counts as 0.01 seconds.
-</span><span class='line'>  %   cumulative   self              self     total           
-</span><span class='line'> time   seconds   seconds    calls  ms/call  ms/call  name    
-</span><span class='line'> 19.14      1.16     1.16                             png_read_filter_row_paeth_multibyte_pixel
-</span><span class='line'> 15.35      2.09     0.93                             cocos2d::Image::premultipliedAlpha()
-</span><span class='line'> 14.36      2.96     0.87                             cocos2d::Texture2D::convertRGBA8888ToRGBA4444(unsigned char const*, int, unsigned char*)
-</span><span class='line'>  7.10      3.39     0.43                             profCount
-</span><span class='line'>  3.96      3.63     0.24                             png_read_filter_row_up
-</span><span class='line'>  3.30      3.83     0.20                             llex
-</span><span class='line'>  3.14      4.02     0.19                             png_read_filter_row_sub
-</span><span class='line'>  2.81      4.19     0.17                             __gnu_mcount_nc
+</span><span class='line'><span class="n">Each</span> <span class="n">sample</span> <span class="n">counts</span> <span class="n">as</span> <span class="mf">0.01</span> <span class="n">seconds</span><span class="p">.</span>
+</span><span class='line'>  <span class="o">%</span>   <span class="n">cumulative</span>   <span class="n">self</span>              <span class="n">self</span>     <span class="n">total</span>
+</span><span class='line'> <span class="n">time</span>   <span class="n">seconds</span>   <span class="n">seconds</span>    <span class="n">calls</span>  <span class="n">ms</span><span class="o">/</span><span class="n">call</span>  <span class="n">ms</span><span class="o">/</span><span class="n">call</span>  <span class="n">name</span>
+</span><span class='line'> <span class="mf">19.14</span>      <span class="mf">1.16</span>     <span class="mf">1.16</span>                             <span class="n">png_read_filter_row_paeth_multibyte_pixel</span>
+</span><span class='line'> <span class="mf">15.35</span>      <span class="mf">2.09</span>     <span class="mf">0.93</span>                             <span class="n">cocos2d</span><span class="o">::</span><span class="n">Image</span><span class="o">::</span><span class="n">premultipliedAlpha</span><span class="p">()</span>
+</span><span class='line'> <span class="mf">14.36</span>      <span class="mf">2.96</span>     <span class="mf">0.87</span>                             <span class="n">cocos2d</span><span class="o">::</span><span class="n">Texture2D</span><span class="o">::</span><span class="n">convertRGBA8888ToRGBA4444</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="k">const</span><span class="o">*</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span><span class="p">)</span>
+</span><span class='line'>  <span class="mf">7.10</span>      <span class="mf">3.39</span>     <span class="mf">0.43</span>                             <span class="n">profCount</span>
+</span><span class='line'>  <span class="mf">3.96</span>      <span class="mf">3.63</span>     <span class="mf">0.24</span>                             <span class="n">png_read_filter_row_up</span>
+</span><span class='line'>  <span class="mf">3.30</span>      <span class="mf">3.83</span>     <span class="mf">0.20</span>                             <span class="n">llex</span>
+</span><span class='line'>  <span class="mf">3.14</span>      <span class="mf">4.02</span>     <span class="mf">0.19</span>                             <span class="n">png_read_filter_row_sub</span>
+</span><span class='line'>  <span class="mf">2.81</span>      <span class="mf">4.19</span>     <span class="mf">0.17</span>                             <span class="n">__gnu_mcount_nc</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">......</span>
+</span><span class='line'>
 </span><span class='line'>  
-</span><span class='line'>  ......
-</span><span class='line'>  
-</span><span class='line'>  
-</span><span class='line'>           Call graph (explanation follows)
+</span><span class='line'>           <span class="n">Call</span> <span class="n">graph</span> <span class="p">(</span><span class="n">explanation</span> <span class="n">follows</span><span class="p">)</span>
 </span><span class='line'>
 </span><span class='line'>
-</span><span class='line'>granularity: each sample hit covers 2 byte(s) for 0.17% of 5.99 seconds
+</span><span class='line'><span class="nl">granularity:</span> <span class="n">each</span> <span class="n">sample</span> <span class="n">hit</span> <span class="n">covers</span> <span class="mi">2</span> <span class="n">byte</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="mf">0.17</span><span class="o">%</span> <span class="n">of</span> <span class="mf">5.99</span> <span class="n">seconds</span>
 </span><span class='line'>
-</span><span class='line'>index % time    self  children    called     name
-</span><span class='line'>                                                 &lt;spontaneous&gt;
-</span><span class='line'>[1]     19.4    1.16    0.00                 png_read_filter_row_paeth_multibyte_pixel [1]
-</span><span class='line'>-----------------------------------------------
-</span><span class='line'>                                                 &lt;spontaneous&gt;
-</span><span class='line'>[2]     15.5    0.93    0.00                 cocos2d::Image::premultipliedAlpha() [2]
-</span><span class='line'>-----------------------------------------------
-</span><span class='line'>                                                 &lt;spontaneous&gt;
-</span><span class='line'>[3]     14.5    0.87    0.00                 cocos2d::Texture2D::convertRGBA8888ToRGBA4444(unsigned char const*, int, unsigned char*) [3]
-</span><span class='line'>-----------------------------------------------
-</span><span class='line'>                                                 &lt;spontaneous&gt;
-</span><span class='line'>[4]      7.2    0.43    0.00                 profCount [4]
-</span><span class='line'>-----------------------------------------------
-</span><span class='line'>                                                 &lt;spontaneous&gt;
-</span><span class='line'>[5]      4.0    0.24    0.00                 png_read_filter_row_up [5]
-</span><span class='line'>-----------------------------------------------
+</span><span class='line'><span class="n">index</span> <span class="o">%</span> <span class="n">time</span>    <span class="n">self</span>  <span class="n">children</span>    <span class="n">called</span>     <span class="n">name</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="mf">19.4</span>    <span class="mf">1.16</span>    <span class="mf">0.00</span>                 <span class="n">png_read_filter_row_paeth_multibyte_pixel</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">2</span><span class="p">]</span>     <span class="mf">15.5</span>    <span class="mf">0.93</span>    <span class="mf">0.00</span>                 <span class="n">cocos2d</span><span class="o">::</span><span class="n">Image</span><span class="o">::</span><span class="n">premultipliedAlpha</span><span class="p">()</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">3</span><span class="p">]</span>     <span class="mf">14.5</span>    <span class="mf">0.87</span>    <span class="mf">0.00</span>                 <span class="n">cocos2d</span><span class="o">::</span><span class="n">Texture2D</span><span class="o">::</span><span class="n">convertRGBA8888ToRGBA4444</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="k">const</span><span class="o">*</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">4</span><span class="p">]</span>      <span class="mf">7.2</span>    <span class="mf">0.43</span>    <span class="mf">0.00</span>                 <span class="n">profCount</span> <span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">5</span><span class="p">]</span>      <span class="mf">4.0</span>    <span class="mf">0.24</span>    <span class="mf">0.00</span>                 <span class="n">png_read_filter_row_up</span> <span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
 <p>简单解释一下含义</p>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -334,40 +338,40 @@
 <span class='line-number'>32</span>
 <span class='line-number'>33</span>
 <span class='line-number'>34</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Flat profile:
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">Flat</span> <span class="nl">profile:</span>
 </span><span class='line'>
-</span><span class='line'>Each sample counts as 0.01 seconds.
-</span><span class='line'>  %   cumulative   self              self     total           
-</span><span class='line'> time   seconds   seconds    calls  ms/call  ms/call  name
-</span><span class='line'> 函数     程序       函数       函数    函数     函数      函数名
-</span><span class='line'> 消耗     累计       本身       调用    平均     平均
-</span><span class='line'> 时间     执行       执行       次数    执行     执行
-</span><span class='line'> 占程     时间       时间              时间     时间
-</span><span class='line'> 序运                                 (不      (包
-</span><span class='line'> 行时                                  包       括
-</span><span class='line'> 间的                                  括       被
-</span><span class='line'> 百分                                  被       调
-</span><span class='line'> 比                                    调       用
-</span><span class='line'>                                      用       时
-</span><span class='line'>                                      时       间)
-</span><span class='line'>                                      间)
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>           Call graph (explanation follows)
+</span><span class='line'><span class="n">Each</span> <span class="n">sample</span> <span class="n">counts</span> <span class="n">as</span> <span class="mf">0.01</span> <span class="n">seconds</span><span class="p">.</span>
+</span><span class='line'>  <span class="o">%</span>   <span class="n">cumulative</span>   <span class="n">self</span>              <span class="n">self</span>     <span class="n">total</span>
+</span><span class='line'> <span class="n">time</span>   <span class="n">seconds</span>   <span class="n">seconds</span>    <span class="n">calls</span>  <span class="n">ms</span><span class="o">/</span><span class="n">call</span>  <span class="n">ms</span><span class="o">/</span><span class="n">call</span>  <span class="n">name</span>
+</span><span class='line'> <span class="err">函数</span>     <span class="err">程序</span>       <span class="err">函数</span>       <span class="err">函数</span>    <span class="err">函数</span>     <span class="err">函数</span>      <span class="err">函数名</span>
+</span><span class='line'> <span class="err">消耗</span>     <span class="err">累计</span>       <span class="err">本身</span>       <span class="err">调用</span>    <span class="err">平均</span>     <span class="err">平均</span>
+</span><span class='line'> <span class="err">时间</span>     <span class="err">执行</span>       <span class="err">执行</span>       <span class="err">次数</span>    <span class="err">执行</span>     <span class="err">执行</span>
+</span><span class='line'> <span class="err">占程</span>     <span class="err">时间</span>       <span class="err">时间</span>              <span class="err">时间</span>     <span class="err">时间</span>
+</span><span class='line'> <span class="err">序运</span>                                 <span class="p">(</span><span class="err">不</span>      <span class="p">(</span><span class="err">包</span>
+</span><span class='line'> <span class="err">行时</span>                                  <span class="err">包</span>       <span class="err">括</span>
+</span><span class='line'> <span class="err">间的</span>                                  <span class="err">括</span>       <span class="err">被</span>
+</span><span class='line'> <span class="err">百分</span>                                  <span class="err">被</span>       <span class="err">调</span>
+</span><span class='line'> <span class="err">比</span>                                    <span class="err">调</span>       <span class="err">用</span>
+</span><span class='line'>                                      <span class="err">用</span>       <span class="err">时</span>
+</span><span class='line'>                                      <span class="err">时</span>       <span class="err">间</span><span class="p">)</span>
+</span><span class='line'>                                      <span class="err">间</span><span class="p">)</span>
 </span><span class='line'>
 </span><span class='line'>
-</span><span class='line'>granularity: each sample hit covers 2 byte(s) for 0.17% of 5.99 seconds
+</span><span class='line'>           <span class="n">Call</span> <span class="n">graph</span> <span class="p">(</span><span class="n">explanation</span> <span class="n">follows</span><span class="p">)</span>
 </span><span class='line'>
-</span><span class='line'>index % time    self  children    called     name
-</span><span class='line'> 索引    函数     函数   函数的       被调用      函数名
-</span><span class='line'> 值      执行       本身   子函数        次数
-</span><span class='line'>        时间     执行    执行
-</span><span class='line'>        占程     时间    时间
-</span><span class='line'>        序运
-</span><span class='line'>        行时
-</span><span class='line'>        间百
-</span><span class='line'>        分比
-</span><span class='line'>        
+</span><span class='line'>
+</span><span class='line'><span class="nl">granularity:</span> <span class="n">each</span> <span class="n">sample</span> <span class="n">hit</span> <span class="n">covers</span> <span class="mi">2</span> <span class="n">byte</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="mf">0.17</span><span class="o">%</span> <span class="n">of</span> <span class="mf">5.99</span> <span class="n">seconds</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">index</span> <span class="o">%</span> <span class="n">time</span>    <span class="n">self</span>  <span class="n">children</span>    <span class="n">called</span>     <span class="n">name</span>
+</span><span class='line'> <span class="err">索引</span>    <span class="err">函数</span>     <span class="err">函数</span>   <span class="err">函数的</span>       <span class="err">被调用</span>      <span class="err">函数名</span>
+</span><span class='line'> <span class="err">值</span>      <span class="err">执行</span>     <span class="err">本身</span>   <span class="err">子函数</span>        <span class="err">次数</span>
+</span><span class='line'>        <span class="err">时间</span>     <span class="err">执行</span>    <span class="err">执行</span>
+</span><span class='line'>        <span class="err">占程</span>     <span class="err">时间</span>    <span class="err">时间</span>
+</span><span class='line'>        <span class="err">序运</span>
+</span><span class='line'>        <span class="err">行时</span>
+</span><span class='line'>        <span class="err">间百</span>
+</span><span class='line'>        <span class="err">分比</span>
+</span><span class='line'>
 </span></code></pre></td></tr></table></div></figure>
 
 ]]></content>
