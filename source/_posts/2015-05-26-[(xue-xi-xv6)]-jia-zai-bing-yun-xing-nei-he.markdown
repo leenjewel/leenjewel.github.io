@@ -259,9 +259,11 @@ xv6.img: bootblock kernel fs.img
 
 可以看出 xv6.img 是一个由 10000 个扇区组成的（512b x 10000 = 5 MB），而里面包含的只有 `bootblock` 和 `kernel` 两个块，通过名字我们不难看出 `bootblock` 就是引导区，它的大小正好是 512 字节即一个磁盘扇区大小（可以通过文件浏览器看到），所以根据它们写入 xv6.img 的顺序我们证实了猜测，在 xv6 系统中引导区占一个磁盘扇区大小，放置在磁盘的第一扇区，紧随其后的是内核文件（ELF 文件格式）。我们用一个十六进制编辑器打开 kernel 文件看看，可以看到开头的数据内如如下
 
-|7F 45 4C 46|01 01 01 00|00 00 00 00|00 00 00 00|02 00 03 00|01 00 00 00|0C 00 10 00|34 00 00 00|
-|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|
-|5C B7 01 00|00 00 00 00|34 00 20 00|02 00 28 00|10 00 0D 00|
+|magic|elf[12]|type|machine|version|entry|phoff|shoff|flags|
+|:---:|:-----:|:--:|:-----:|:-----:|:---:|:---:|:---:|:---:|
+|7F 45 4C 46|01 01 01 00 00 00 00 00 00 00 00 00|02 00|03 00|01 00 00 00|0C 00 10 00|34 00 00 00|00 F6 01 00|00 00 00 00|
+|ehsize|phentsize|phnum|shentsize|shnum|shstrndx|
+|34 00|20 00|02 00|28 00|12 00|0F 00|
 
 而内核文件的前 4 字节正式 ELF 文件头的模数 `ELF_MAGIC 0x464C457F` 这也说明了内核文件确实是一个 ELF 格式的文件。如果我们按照 ELF 文件结构重拍上面的机器码会是这样
 
@@ -274,14 +276,40 @@ xv6.img: bootblock kernel fs.img
 |version|4字节|01 00 00 00|版本号为 1|
 |entry|4字节|0C 00 10 00|该可执行文件入口地址|
 |phoff|4字节|34 00 00 00|程序头表相对于文件的起始位置是 52 字节|
-|shoff|4字节|5C B7 01 00|节区头表相对于文件的起始位置是 112476 字节|
+|shoff|4字节|00 F6 01 00|节区头表相对于文件的起始位置是 128512 字节|
 |flags|4字节|00 00 00 00|无特定处理器标志|
 |ehsize|2字节|34 00|ELF 头大小为 52 字节|
 |phentsize|2字节|20 00|程序头表一个入口的大小是 32 字节|
 |phnum|2字节|02 00|程序头表入口个数是 2 个|
 |shentsize|2字节|28 00|节区头表入口大小是 40 字节|
-|shnum|2字节|10 00|节区头表入口个数是 16 个|
-|shstrndx|2字节|0D 00|字符表入口在节区头表的索引是 13|
+|shnum|2字节|12 00|节区头表入口个数是 18 个|
+|shstrndx|2字节|0F 00|字符表入口在节区头表的索引是 15|
+
+通过十六进制编辑器逐个字节的去分析内核文件的 ELF 头部是希望大家能有个更直观的认识，当然了 Linux 也为我们提供了方便的工具 `readelf` 命令来检查 ELF 文件的相关信息。我们再通过 `readelf` 命令验证一下我们刚刚通过十六进制编辑器分析的结果。
+
+```shell
+$ readelf -h kernel
+ELF Header:
+  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+  Class:                             ELF32
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           Intel 80386
+  Version:                           0x1
+  Entry point address:               0x10000c
+  Start of program headers:          52 (bytes into file)
+  Start of section headers:          128512 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               52 (bytes)
+  Size of program headers:           32 (bytes)
+  Number of program headers:         2
+  Size of section headers:           40 (bytes)
+  Number of section headers:         18
+  Section header string table index: 15
+```
 
 最后我们看一下从磁盘读取内核到内存的方法实现，看看是怎样通过向特定端口发送数据来达到操作磁盘目的的。具体的说明请看代码附带的注释。
 
@@ -359,8 +387,10 @@ bootmain(void)
 
 载入内核后根据 ELF 头表的说明，`bootmain`函数开始将内核 ELF 文件的程序头表从磁盘载入内存，为运行内核代码做着最后的准备工作。根据上一节的分析我们知道内核的 ELF 文件的程序头表紧跟在 ELF 头表后面，程序头表一共 2 个，每个 32 字节大小，一共是 64 字节，我们继续用十六进制编辑器打开 `kernel` 内核二进制文件看看程序头表的内容。
 
-|01 00 00 00|00 10 00 00|00 00 10 80|00 00 10 00|96 B5 00 00|FC 26 01 00|07 00 00 00|00 10 00 00|
+|type|off|vaddr|paddr|filesz|memsz|flags|align|
 |:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|:---------:|
+|01 00 00 00|00 10 00 00|00 00 10 80|00 00 10 00|96 B5 00 00|FC 26 01 00|07 00 00 00|00 10 00 00|
+|type|off|vaddr|paddr|filesz|memsz|flags|align|
 |51 E5 74 64|00 00 00 00|00 00 00 00|00 00 00 00|00 00 00 00|00 00 00 00|07 00 00 00|04 00 00 00|
 
 * 程序头表 1
@@ -388,3 +418,23 @@ bootmain(void)
 |memsz|4字节|00 00 00 00|段在内存中的大小是 75516 字节|
 |flags|4字节|07 00 00 00|段的权限是可写、可读、可执行|
 |align|4字节|04 00 00 00|段的对齐方式是 4 字节|
+
+同样我们再通过 `readelf` 命令来验证我们通过十六进制编辑器对内核 ELF 文件的程序头表的分析结果十分正确。
+
+```shell
+readelf -l kernel
+
+Elf file type is EXEC (Executable file)
+Entry point 0x10000c
+There are 2 program headers, starting at offset 52
+
+Program Headers:
+  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align
+  LOAD           0x001000 0x80100000 0x00100000 0x0b596 0x126fc RWE 0x1000
+  GNU_STACK      0x000000 0x00000000 0x00000000 0x00000 0x00000 RWE 0x4
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     .text .rodata .stab .stabstr .data .bss
+   01
+```
