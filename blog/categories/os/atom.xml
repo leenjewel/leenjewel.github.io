@@ -4,7 +4,7 @@
   <title><![CDATA[Category: os | leenjewel Blog]]></title>
   <link href="http://leenjewel.github.io/blog/categories/os/atom.xml" rel="self"/>
   <link href="http://leenjewel.github.io/"/>
-  <updated>2015-05-08T18:42:08+08:00</updated>
+  <updated>2015-06-11T18:19:29+08:00</updated>
   <id>http://leenjewel.github.io/</id>
   <author>
     <name><![CDATA[leenjewel]]></name>
@@ -18,7 +18,7 @@
     <link href="http://leenjewel.github.io/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/"/>
     <updated>2014-07-24T22:14:15+08:00</updated>
     <id>http://leenjewel.github.io/blog/2014/07/24/[(xue-xi-xv6-)]-zai-mac-osx-xia-yun-xing-xv6</id>
-    <content type="html"><![CDATA[<h3>编译 xv6</h3>
+    <content type="html"><![CDATA[<h2>编译 xv6</h2>
 
 <p>首先要用 git 把 xv6 的源码 clone 到本地</p>
 
@@ -50,7 +50,7 @@ make
 
 <p>编译成功后我们会得到 xv6.img 和 fs.img 两个文件。接下来说说如何运行我们编译好的 xv6。</p>
 
-<h3>运行 xv6</h3>
+<h2>运行 xv6</h2>
 
 <p>按照官方的说法，xv6 支持在 qemu 虚拟机下运行。在 Linux 环境安装好 qemu 虚拟机后可以在命令行执行</p>
 
