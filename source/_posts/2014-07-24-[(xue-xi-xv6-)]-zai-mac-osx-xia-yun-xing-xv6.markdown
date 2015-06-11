@@ -6,7 +6,7 @@ comments: true
 categories: [os]
 ---
 
-###编译 xv6
+##编译 xv6
 
 首先要用 git 把 xv6 的源码 clone 到本地
 
@@ -38,7 +38,7 @@ make
 
 编译成功后我们会得到 xv6.img 和 fs.img 两个文件。接下来说说如何运行我们编译好的 xv6。
 
-###运行 xv6
+##运行 xv6
 
 按照官方的说法，xv6 支持在 qemu 虚拟机下运行。在 Linux 环境安装好 qemu 虚拟机后可以在命令行执行
 

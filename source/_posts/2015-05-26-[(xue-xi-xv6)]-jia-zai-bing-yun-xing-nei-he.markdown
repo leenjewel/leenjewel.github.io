@@ -59,11 +59,11 @@ categories: [操作系统]
 
 | ELF 头部 ( ELF Header ) |
 |:-----------------------:|
-| 程序头表 (Program Header Table) |
-|.text|
-|.rodata|
-|......|
-|节头表 (Section Header Table)|
+| 程序头表 (Program Header Table) 
+|.text
+|.rodata
+|......
+|节头表 (Section Header Table)
 
 这里我们暂时只关心 ELF 文件结构的前两个部分：ELF 头部和程序头表，xv6 源代码的 elf.h 文件中有其详细的定义，我们来看一下。
 
@@ -207,6 +207,8 @@ bootmain(void)
   void (*entry)(void);
   uchar* pa;
 
+  // 从 0xa0000 到 0xfffff 的物理地址范围属于设备空间，
+  // 所以内核放置在 0x10000 处开始
   elf = (struct elfhdr*)0x10000;  // scratch space
 
   // 从内核所在硬盘位置读取一内存页 4kb 数据
@@ -306,7 +308,7 @@ xv6.img: bootblock kernel fs.img
 
 通过十六进制编辑器逐个字节的去分析内核文件的 ELF 头部是希望大家能有个更直观的认识，当然了 Linux 也为我们提供了方便的工具 `readelf` 命令来检查 ELF 文件的相关信息。我们再通过 `readelf` 命令验证一下我们刚刚通过十六进制编辑器分析的结果。
 
-```shell
+```sh
 $ readelf -h kernel
 ELF Header:
   Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
@@ -373,7 +375,9 @@ bootmain(void)
   void (*entry)(void);
   uchar* pa;
 
-  elf = (struct elfhdr*)0x10000;  // scratch space
+  // 从 0xa0000 到 0xfffff 的物理地址范围属于设备空间，
+  // 所以内核放置在 0x10000 处开始
+  elf = (struct elfhdr*)0x10000;
 
   // 从内核所在硬盘位置读取一内存页 4kb 数据
   readseg((uchar*)elf, 4096, 0);
@@ -440,7 +444,7 @@ bootmain(void)
 
 同样我们再通过 `readelf` 命令来验证我们通过十六进制编辑器对内核 ELF 文件的程序头表的分析结果十分正确。
 
-```shell
+```sh
 readelf -l kernel
 
 Elf file type is EXEC (Executable file)
@@ -460,7 +464,7 @@ Program Headers:
 
 在预备知识里我们讲到 ELF 文件的程序头表描述了程序各个段的情况，所以我们再通过`readelf`命令看看内核文件都有那些段
 
-```shell
+```sh
 readelf -S kernel
 There are 18 section headers, starting at offset 0x1f600:
 
@@ -495,3 +499,68 @@ Key to Flags:
 而要加载的段是 `.text .rodata .stab .stabstr .data .bss` ，这些段在内存中的大小总和是 `0x008111 + 0x000672 + 0x000001 + 0x000001 + 0x002596 + 0x00715c = 0x73335` 按照对齐要求 `0x1000` 对齐后为 `0x75516` 和 ELF 程序头表中的内存大小信息一致。
 
 我们再算算这些段在文件中的大小，由于这些段在文件中是顺序排列的，所以用 `.bss段` 的文件偏移量减去 `.text段` 的文件偏移量 `0x00c596 - 0x001000 = 46486` 这也是和 ELF 程序头表中段在文件中大小的信息一致。
+
+##内核加载后的系统内存布局
+
+至此内核已经被载入内存并准备投入运行了。在结束这一篇前我们再看一眼目前状态下系统整体的内存布局，对即将运行的内核环境有一个大致的了解。我们来看几个关键点
+
+```c
+// bootmain.c
+
+void
+bootmain(void)
+{
+  struct elfhdr *elf;
+  struct proghdr *ph, *eph;
+  void (*entry)(void);
+  uchar* pa;
+
+  // 从 0xa0000 到 0xfffff 的物理地址范围属于设备空间，
+  // 所以内核放置在 0x10000 处开始
+  elf = (struct elfhdr*)0x10000;
+
+  // 从内核所在硬盘位置读取一内存页 4kb 数据
+  readseg((uchar*)elf, 4096, 0);
+
+  // 省略后面的代码......
+}
+```
+
+由此可知内核被放置在 0x10000 处开始。
+
+```nasm
+# bootasm.S
+
+.code32  # Tell assembler to generate 32-bit code now.
+start32:
+  # Set up the protected-mode data segment registers
+  # 像上面讲 ljmp 时所说的，这时候已经在保护模式下了
+  # 数据段在 GDT 中的下标是 2，所以这里数据段的段选择子是 2 << 3 = 0000 0000 0001 0000
+  # 这 16 位的段选择子中的前 13 位是 GDT 段表下标，这里前 13 位的值是 2 代表选择了数据段
+  # 这里将 3 个数据段寄存器都赋值成数据段段选择子的值
+  movw    $(SEG_KDATA<<3), %ax    # Our data segment selector  段选择子赋值给 ax 寄存器
+  movw    %ax, %ds                # -> DS: Data Segment        初始化数据段寄存器
+  movw    %ax, %es                # -> ES: Extra Segment       初始化扩展段寄存器
+  movw    %ax, %ss                # -> SS: Stack Segment       初始化堆栈段寄存器
+  movw    $0, %ax                 # Zero segments not ready for use  ax 寄存器清零
+  movw    %ax, %fs                # -> FS                      辅助寄存器清零
+  movw    %ax, %gs                # -> GS                      辅助寄存器清零
+
+  # Set up the stack pointer and call into C.
+  movl    $start, %esp            # 栈顶被放置在 0x7C00 处，即 $start
+  call    bootmain
+
+```
+
+由此可知在执行 `bootmain.c` 之前 `bootasm.S` 汇编代码已经将栈的栈顶设置在了 `0x7C00` 处。之前我们了解过 x86 架构计算机的启动过程，BIOS 会将引导扇区的引导程序加载到 `0x7C00` 处并引导 CPU 从此处开始运行，故栈顶即被设置在了和引导程序一致的内存位置上。我们知道栈是自栈顶开始向下增长的，所以这里栈会逐渐远离引导程序，所以这里这样安置栈顶的位置并无什么问题。
+
+最后放一张简单的内存布局示意图
+
+```
+0x00000000
++------------------------------------------------------------------------—+
+|        0x7c00      0x7d00         0x10000                               |
+|    栈    |  引导程序  |                |    内核                          |
++-------------------------------------------------------------------------+
+                                                                 0xffffffff
+```
