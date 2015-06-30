@@ -4,7 +4,7 @@
   <title><![CDATA[leenjewel Blog]]></title>
   <link href="http://leenjewel.github.io/atom.xml" rel="self"/>
   <link href="http://leenjewel.github.io/"/>
-  <updated>2015-06-11T18:19:29+08:00</updated>
+  <updated>2015-06-30T16:48:29+08:00</updated>
   <id>http://leenjewel.github.io/</id>
   <author>
     <name><![CDATA[leenjewel]]></name>
@@ -12,6 +12,474 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[在 Cocos2d-x 中使用 OpenSSL]]></title>
+    <link href="http://leenjewel.github.io/blog/2015/06/30/zai-cocos2d-x-zhong-shi-yong-openssl/"/>
+    <updated>2015-06-30T14:13:22+08:00</updated>
+    <id>http://leenjewel.github.io/blog/2015/06/30/zai-cocos2d-x-zhong-shi-yong-openssl</id>
+    <content type="html"><![CDATA[<p>在我们使用 Cocos2d-x 引擎制作游戏过程中经常会遇到诸如对数据进行加密、解密、MD5、SHA1 散列计算等操作的需求。对于这样的需求使用 OpenSSL 库来解决是最为方便的。下面我们就说说如何将 OpenSSL 库集成到 Cocos2d-x 项目中并在 iOS 和 Android 平台下使用。什么？！不知道 OpenSSL 是什么？这么大名鼎鼎的开源项目，<a href="https://zh.wikipedia.org/wiki/OpenSSL">移步 Wiki </a>去了解吧。</p>
+
+<h2>下载 OpenSSL 源代码</h2>
+
+<p>直接到 OpenSSL 开源项目官网去<a href="https://www.openssl.org/source/openssl-1.0.2c.tar.gz">下载</a>最新版本即可。我下载的是<code>openssl-1.0.2c</code></p>
+
+<h2>编译生成 iOS 平台下适用的 OpenSSL 静态链接库</h2>
+
+<p>首先解压缩你下载的 OpenSSL 源代码压缩包。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>tar -zxvf openssl-1.0.2c.tar.gz
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>玩过 Linux 的人都知道从源代码编译程序一般需要三步：</p>
+
+<ol>
+<li>./Configure</li>
+<li>make</li>
+<li>make install</li>
+</ol>
+
+
+<p>编译 OpenSSL 生成静态链接库的过程也一样，唯一的区别是我们要针对不同的平台架构生成针对每个平台架构的静态链接库。例如 iPhone、iPad 目前有三种架构：<code>arm64</code>、<code>armv7s</code>和<code>armv7</code>外加模拟器的架构 <code>i386</code>，所以我们要重复上面三个步骤 4 次，生成四个平台架构对应的静态链接库。</p>
+
+<p>这里我们偷个懒，用<a href="https://raw.githubusercontent.com/Raphaelios/raphaelios-scripts/master/openssl/build-openssl.sh"> GitHub 上 Raphaelios 写的 Shell 脚本</a>来直接编译 OpenSSL ，下面我贴出脚本的源码并简单添加一些说明注释。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#!/bin/bash</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c">#  Copyright (c) 2013 Claudiu-Vlad Ursache &lt;claudiu@cvursache.com&gt;</span>
+</span><span class='line'><span class="c">#  MIT License (see LICENSE.md file)</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c">#  Based on work by Felix Schulze:</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c">#  Automatic build script for libssl and libcrypto </span>
+</span><span class='line'><span class="c">#  for iPhoneOS and iPhoneSimulator</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c">#  Created by Felix Schulze on 16.12.10.</span>
+</span><span class='line'><span class="c">#  Copyright 2010 Felix Schulze. All rights reserved.</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c">#  Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+</span><span class='line'><span class="c">#  you may not use this file except in compliance with the License.</span>
+</span><span class='line'><span class="c">#  You may obtain a copy of the License at</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c">#  http://www.apache.org/licenses/LICENSE-2.0</span>
+</span><span class='line'><span class="c">#</span>
+</span><span class='line'><span class="c">#  Unless required by applicable law or agreed to in writing, software</span>
+</span><span class='line'><span class="c">#  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+</span><span class='line'><span class="c">#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+</span><span class='line'><span class="c">#  See the License for the specific language governing permissions and</span>
+</span><span class='line'><span class="c">#  limitations under the License.</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># 当执行时使用到未定义过的变量，则显示错误信息</span>
+</span><span class='line'><span class="nb">set</span> -u
+</span><span class='line'>
+</span><span class='line'><span class="c"># Setup architectures, library name and other vars + cleanup from previous runs</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># 四个平台架构标识</span>
+</span><span class='line'><span class="nv">ARCHS</span><span class="o">=(</span><span class="s2">&quot;arm64&quot;</span> <span class="s2">&quot;armv7s&quot;</span> <span class="s2">&quot;armv7&quot;</span> <span class="s2">&quot;i386&quot;</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># 四个平台架构分别对应的 SDK 名称</span>
+</span><span class='line'><span class="nv">SDKS</span><span class="o">=(</span><span class="s2">&quot;iphoneos&quot;</span> <span class="s2">&quot;iphoneos&quot;</span> <span class="s2">&quot;iphoneos&quot;</span> <span class="s2">&quot;macosx&quot;</span><span class="o">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># 使用的 OpenSSL 库版本</span>
+</span><span class='line'><span class="nv">LIB_NAME</span><span class="o">=</span><span class="s2">&quot;openssl-1.0.2c&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># 临时输出目录</span>
+</span><span class='line'><span class="nv">TEMP_LIB_PATH</span><span class="o">=</span><span class="s2">&quot;/tmp/${LIB_NAME}&quot;</span>
+</span><span class='line'><span class="nv">LIB_DEST_DIR</span><span class="o">=</span><span class="s2">&quot;lib&quot;</span>
+</span><span class='line'><span class="nv">HEADER_DEST_DIR</span><span class="o">=</span><span class="s2">&quot;include&quot;</span>
+</span><span class='line'>rm -rf <span class="s2">&quot;${HEADER_DEST_DIR}&quot;</span> <span class="s2">&quot;${LIB_DEST_DIR}&quot;</span> <span class="s2">&quot;${TEMP_LIB_PATH}*&quot;</span> <span class="s2">&quot;${LIB_NAME}&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Unarchive library, then configure and make for specified architectures</span>
+</span><span class='line'><span class="c"># 编译静态链接库的函数</span>
+</span><span class='line'>configure_make<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>   <span class="nv">ARCH</span><span class="o">=</span><span class="nv">$1</span>; <span class="nv">GCC</span><span class="o">=</span><span class="nv">$2</span>; <span class="nv">SDK_PATH</span><span class="o">=</span><span class="nv">$3</span>;
+</span><span class='line'>   <span class="nv">LOG_FILE</span><span class="o">=</span><span class="s2">&quot;${TEMP_LIB_PATH}-${ARCH}.log&quot;</span>
+</span><span class='line'>   tar xfz <span class="s2">&quot;${LIB_NAME}.tar.gz&quot;</span>
+</span><span class='line'>   <span class="nb">pushd</span> .; <span class="nb">cd</span> <span class="s2">&quot;${LIB_NAME}&quot;</span>;
+</span><span class='line'>
+</span><span class='line'>   ./Configure BSD-generic32 --openssldir<span class="o">=</span><span class="s2">&quot;${TEMP_LIB_PATH}-${ARCH}&quot;</span> &amp;&gt; <span class="s2">&quot;${LOG_FILE}&quot;</span>
+</span><span class='line'>
+</span><span class='line'>   make <span class="nv">CC</span><span class="o">=</span><span class="s2">&quot;${GCC} -arch ${ARCH}&quot;</span> <span class="nv">CFLAG</span><span class="o">=</span><span class="s2">&quot;-isysroot ${SDK_PATH}&quot;</span> &amp;&gt; <span class="s2">&quot;${LOG_FILE}&quot;</span>;
+</span><span class='line'>   make install &amp;&gt; <span class="s2">&quot;${LOG_FILE}&quot;</span>;
+</span><span class='line'>   <span class="nb">popd</span>; rm -rf <span class="s2">&quot;${LIB_NAME}&quot;</span>;
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># 分别开始编译四个平台架构的静态链接库</span>
+</span><span class='line'><span class="k">for</span> <span class="o">((</span><span class="nv">i</span><span class="o">=</span>0; i &lt; <span class="k">${#</span><span class="nv">ARCHS</span><span class="p">[@]</span><span class="k">}</span>; i++<span class="o">))</span>
+</span><span class='line'><span class="k">do</span>
+</span><span class='line'>   <span class="c"># 获取 SDK 路径</span>
+</span><span class='line'>   <span class="nv">SDK_PATH</span><span class="o">=</span><span class="k">$(</span>xcrun -sdk <span class="k">${</span><span class="nv">SDKS</span><span class="p">[i]</span><span class="k">}</span> --show-sdk-path<span class="k">)</span>
+</span><span class='line'>   <span class="c"># 过去 gcc 编译器路径</span>
+</span><span class='line'>   <span class="nv">GCC</span><span class="o">=</span><span class="k">$(</span>xcrun -sdk <span class="k">${</span><span class="nv">SDKS</span><span class="p">[i]</span><span class="k">}</span> -find gcc<span class="k">)</span>
+</span><span class='line'>   <span class="c"># 编译</span>
+</span><span class='line'>   configure_make <span class="s2">&quot;${ARCHS[i]}&quot;</span> <span class="s2">&quot;${GCC}&quot;</span> <span class="s2">&quot;${SDK_PATH}&quot;</span>
+</span><span class='line'><span class="k">done</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Combine libraries for different architectures into one</span>
+</span><span class='line'><span class="c"># Use .a files from the temp directory by providing relative paths</span>
+</span><span class='line'><span class="c"># 通过 lipo 命令将四个平台架构的静态库打包成一个静态库</span>
+</span><span class='line'>create_lib<span class="o">()</span>
+</span><span class='line'><span class="o">{</span>
+</span><span class='line'>   <span class="nv">LIB_SRC</span><span class="o">=</span><span class="nv">$1</span>; <span class="nv">LIB_DST</span><span class="o">=</span><span class="nv">$2</span>;
+</span><span class='line'>   <span class="nv">LIB_PATHS</span><span class="o">=(</span> <span class="s2">&quot;${ARCHS[@]/#/${TEMP_LIB_PATH}-}&quot;</span> <span class="o">)</span>
+</span><span class='line'>   <span class="nv">LIB_PATHS</span><span class="o">=(</span> <span class="s2">&quot;${LIB_PATHS[@]/%//${LIB_SRC}}&quot;</span> <span class="o">)</span>
+</span><span class='line'>   lipo <span class="k">${</span><span class="nv">LIB_PATHS</span><span class="p">[@]</span><span class="k">}</span> -create -output <span class="s2">&quot;${LIB_DST}&quot;</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>mkdir <span class="s2">&quot;${LIB_DEST_DIR}&quot;</span>;
+</span><span class='line'>create_lib <span class="s2">&quot;lib/libcrypto.a&quot;</span> <span class="s2">&quot;${LIB_DEST_DIR}/libcrypto.a&quot;</span>
+</span><span class='line'>create_lib <span class="s2">&quot;lib/libssl.a&quot;</span> <span class="s2">&quot;${LIB_DEST_DIR}/libssl.a&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c"># Copy header files + final cleanups</span>
+</span><span class='line'>mkdir -p <span class="s2">&quot;${HEADER_DEST_DIR}&quot;</span>
+</span><span class='line'>cp -R <span class="s2">&quot;${TEMP_LIB_PATH}-${ARCHS[0]}/include&quot;</span> <span class="s2">&quot;${HEADER_DEST_DIR}&quot;</span>
+</span><span class='line'>rm -rf <span class="s2">&quot;${TEMP_LIB_PATH}-*&quot;</span> <span class="s2">&quot;{LIB_NAME}&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个脚本的用法就是将脚本和刚刚下载的 OpenSSL 源码压缩包放在同一个目录下，然后不用解压 OpenSSL 压缩包，直接运行脚本即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>sh  build-openssl.sh
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>耐心等待片刻之后，如果没有任何报错信息，则会在脚本所在目录多出两个目录 <code>include</code> 和 <code>lib</code>，在 <code>lib</code> 目录下就是我们刚刚通过脚本生成好的静态链接库 <code>libcrypto.a</code> 和 <code>libssl.a</code>。</p>
+
+<h2>编译生成 Android 平台下适用的 OpenSSL 静态链接库</h2>
+
+<p>接下来我们继续编译 Android 平台下的 OpenSSL 静态链接库。编译 Android 下的静态链接库自然要用到 NDK。所以首先要确保你下载了 NDK。我这里使用的是 <code>android-ndk-r10d</code>。</p>
+
+<p>同样根据平台架构不同 Android 下面可以生成 <code>arm</code>、<code>armv7</code>和<code>x86</code>。具体的生成步骤都是直接在命令行下执行的。</p>
+
+<p>首先解压缩你的 OpenSSL 源代码压缩包并跳转至解压缩后的源代码目录.</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>tar -zxvf openssl-1.0.2c.tar.gz
+</span><span class='line'><span class="nb">cd </span>openssl-1.0.2c
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>armv7a</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#设置你自己的 NDK 路径</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">NDK</span><span class="o">=</span>/Your Android NDK Path/android-ndk-r10d
+</span><span class='line'><span class="nv">$NDK</span>/build/tools/make-standalone-toolchain.sh --platform<span class="o">=</span>android-9 --toolchain<span class="o">=</span>arm-linux-androideabi-4.6 --install-dir<span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/android-toolchain-arm
+</span><span class='line'><span class="nb">export </span><span class="nv">TOOLCHAIN_PATH</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/android-toolchain-arm/bin
+</span><span class='line'><span class="nb">export </span><span class="nv">TOOL</span><span class="o">=</span>arm-linux-androideabi
+</span><span class='line'><span class="nb">export </span><span class="nv">NDK_TOOLCHAIN_BASENAME</span><span class="o">=</span><span class="k">${</span><span class="nv">TOOLCHAIN_PATH</span><span class="k">}</span>/<span class="k">${</span><span class="nv">TOOL</span><span class="k">}</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CC</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-gcc
+</span><span class='line'><span class="nb">export </span><span class="nv">CXX</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-g++
+</span><span class='line'><span class="nb">export </span><span class="nv">LINK</span><span class="o">=</span><span class="k">${</span><span class="nv">CXX</span><span class="k">}</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">LD</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ld
+</span><span class='line'><span class="nb">export </span><span class="nv">AR</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ar
+</span><span class='line'><span class="nb">export </span><span class="nv">RANLIB</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ranlib
+</span><span class='line'><span class="nb">export </span><span class="nv">STRIP</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-strip
+</span><span class='line'><span class="nb">export </span><span class="nv">ARCH_FLAGS</span><span class="o">=</span><span class="s2">&quot;-march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16&quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">ARCH_LINK</span><span class="o">=</span><span class="s2">&quot;-march=armv7-a -Wl,--fix-cortex-a8&quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CPPFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CXXFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 -frtti -fexceptions &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">LDFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_LINK} &quot;</span>
+</span><span class='line'>./Configure android-armv7
+</span><span class='line'><span class="nv">PATH</span><span class="o">=</span><span class="nv">$TOOLCHAIN_PATH</span>:<span class="nv">$PATH</span> make
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上述命令运行完成后，同样你会在 OpenSSL 源代码目录发现新生成的两个静态链接库文件<code>libcrypto.a</code> 和 <code>libssl.a</code>。我们新建一个目录 <code>armeabi-v7a</code> 将两个新生成的静态链接库文件移动到这个文件夹中备用。</p>
+
+<p>然后我们删除掉刚刚解压缩的 OpenSSL 源码目录，重新解压缩 OpenSSL 的源代码压缩包，准备继续编译生成另外平台架构的静态链接库。</p>
+
+<h3>arm</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#设置你自己的 NDK 路径</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">NDK</span><span class="o">=</span>/Your Android NDK Path/android-ndk-r10d
+</span><span class='line'><span class="nv">$NDK</span>/build/tools/make-standalone-toolchain.sh --platform<span class="o">=</span>android-9 --toolchain<span class="o">=</span>arm-linux-androideabi-4.6 --install-dir<span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/android-toolchain-arm
+</span><span class='line'><span class="nb">export </span><span class="nv">TOOLCHAIN_PATH</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/android-toolchain-arm/bin
+</span><span class='line'><span class="nb">export </span><span class="nv">TOOL</span><span class="o">=</span>arm-linux-androideabi
+</span><span class='line'><span class="nb">export </span><span class="nv">NDK_TOOLCHAIN_BASENAME</span><span class="o">=</span><span class="k">${</span><span class="nv">TOOLCHAIN_PATH</span><span class="k">}</span>/<span class="k">${</span><span class="nv">TOOL</span><span class="k">}</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CC</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-gcc
+</span><span class='line'><span class="nb">export </span><span class="nv">CXX</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-g++
+</span><span class='line'><span class="nb">export </span><span class="nv">LINK</span><span class="o">=</span><span class="k">${</span><span class="nv">CXX</span><span class="k">}</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">LD</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ld
+</span><span class='line'><span class="nb">export </span><span class="nv">AR</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ar
+</span><span class='line'><span class="nb">export </span><span class="nv">RANLIB</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ranlib
+</span><span class='line'><span class="nb">export </span><span class="nv">STRIP</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-strip
+</span><span class='line'><span class="nb">export </span><span class="nv">ARCH_FLAGS</span><span class="o">=</span><span class="s2">&quot;-mthumb&quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">ARCH_LINK</span><span class="o">=</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CPPFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CXXFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 -frtti -fexceptions &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">LDFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_LINK} &quot;</span>
+</span><span class='line'>./Configure android
+</span><span class='line'><span class="nv">PATH</span><span class="o">=</span><span class="nv">$TOOLCHAIN_PATH</span>:<span class="nv">$PATH</span> make
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后我们新建一个目录 <code>armeabi</code> 将新生成的静态链接库文件 <code>libcrypto.a</code> 和 <code>libssl.a</code> 移动到这个文件夹中备用。删除掉源代码目录，重新解压，继续编译生成静态链接库。</p>
+
+<h3>x86</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="c">#设置你自己的 NDK 路径</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">NDK</span><span class="o">=</span>/Your Android NDK Path/android-ndk-r10d
+</span><span class='line'><span class="nv">$NDK</span>/build/tools/make-standalone-toolchain.sh --platform<span class="o">=</span>android-9 --toolchain<span class="o">=</span>x86-4.6 --install-dir<span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/android-toolchain-x86
+</span><span class='line'><span class="nb">export </span><span class="nv">TOOLCHAIN_PATH</span><span class="o">=</span><span class="sb">`</span><span class="nb">pwd</span><span class="sb">`</span>/android-toolchain-x86/bin
+</span><span class='line'><span class="nb">export </span><span class="nv">TOOL</span><span class="o">=</span>i686-linux-android
+</span><span class='line'><span class="nb">export </span><span class="nv">NDK_TOOLCHAIN_BASENAME</span><span class="o">=</span><span class="k">${</span><span class="nv">TOOLCHAIN_PATH</span><span class="k">}</span>/<span class="k">${</span><span class="nv">TOOL</span><span class="k">}</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CC</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-gcc
+</span><span class='line'><span class="nb">export </span><span class="nv">CXX</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-g++
+</span><span class='line'><span class="nb">export </span><span class="nv">LINK</span><span class="o">=</span><span class="k">${</span><span class="nv">CXX</span><span class="k">}</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">LD</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ld
+</span><span class='line'><span class="nb">export </span><span class="nv">AR</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ar
+</span><span class='line'><span class="nb">export </span><span class="nv">RANLIB</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-ranlib
+</span><span class='line'><span class="nb">export </span><span class="nv">STRIP</span><span class="o">=</span><span class="nv">$NDK_TOOLCHAIN_BASENAME</span>-strip
+</span><span class='line'><span class="nb">export </span><span class="nv">ARCH_FLAGS</span><span class="o">=</span><span class="s2">&quot;-march=i686 -msse3 -mstackrealign -mfpmath=sse&quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">ARCH_LINK</span><span class="o">=</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CPPFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CXXFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 -frtti -fexceptions &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">CFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &quot;</span>
+</span><span class='line'><span class="nb">export </span><span class="nv">LDFLAGS</span><span class="o">=</span><span class="s2">&quot; ${ARCH_LINK} &quot;</span>
+</span><span class='line'>./Configure android-x86
+</span><span class='line'><span class="nv">PATH</span><span class="o">=</span><span class="nv">$TOOLCHAIN_PATH</span>:<span class="nv">$PATH</span> make
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>同样我们新建一个目录 <code>x86</code> 用来存放新生成的静态链接库文件 <code>libcrypto.a</code> 和 <code>libssl.a</code>。</p>
+
+<h2>将 OpenSSL 接入 Cocos2d-x 项目</h2>
+
+<p>iOS 和 Android 适用的 OpenSSL 静态链接库我们都已经编译生成了。下面看看我们怎么将 OpenSSL 静态链接库接入到 Cocos2d-x 项目中来使用。</p>
+
+<h3>引入 iOS 适用的 OpenSSL 静态链接库</h3>
+
+<p>首先这里要说明的是我使用的 Cocos2d-x 版本是 3.6。我们先在 Cocos2d-x  项目中新建一个文件夹。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>mkdir -p Your_Cocos2d-x_Project_Path/Classes/security/openssl
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后我们将 iOS 适用的 OpenSSL 静态链接库文件 <code>libcrypto.a</code> 和 <code>libssl.a</code> 拷贝到我们刚刚新建的目录下。</p>
+
+<p>在 Xcode 中将 OpenSSL 的静态链接库文件<code>libcrypto.a</code> 和 <code>libssl.a</code> 引入到项目中。具体做法就是在 <code>[Build Phases] ====&gt; [Link Binary With Libraries]</code> 中添加对两个静态链接库的引用。</p>
+
+<h3>在 Xcode 中添加 OpenSSL 头文件搜索路径</h3>
+
+<p>然后我们再新建一个用于存放 OpenSSL 头文件的文件夹</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>mkdir -p Your_Cocos2d-x_Project_Path/Classes/security/openssl/include/openssl
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>将我们刚刚生成 iOS 适用的 OpenSSL 静态链接库文件时生成的 <code>include</code> 文件夹下面找到的所有的 <code>.h</code> 头文件全部复制到我们刚刚生成的目录下面。</p>
+
+<p><strong>这里需要特别注意</strong>的是包含 OpenSSL 头文件的文件夹必须叫作 <strong>openssl</strong> ，否则项目编译会不成功。</p>
+
+<p>然后继续在 Xcode 中设置 OpenSSL 头文件的搜索路径。具体做法就是在 <code>[Build Settings] ====&gt; [User Header Search Paths]</code> 中添加刚刚我们建立的用于存放 OpenSSL 头文件的目录的路径。要添加的路径为 <code>Your_Cocos2d-x_Project_Path/Classes/security/openssl/include</code></p>
+
+<h3>引入 Android 适用的 OpenSSL 静态链接库</h3>
+
+<p>我们把刚刚用于存放 OpenSSL 静态链接库文件的 <code>armeabi</code> 文件夹拷贝到 Cocos2d-x 项目中来，拷贝的位置是 Android 用于存放库文件的 <code>libs</code> 文件夹。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>cp -ivr Your_OpenSSL_Android_Path/armeabi  <span class="se">\</span>
+</span><span class='line'>  Your_Cocos2d-x_Project_Path/proj.android/libs/
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><strong>这里需要特别注意</strong>如果你的 Cocos2d-x 项目原本已经有了 <code>armeabi</code> 文件夹，注意不要覆盖，而是将 <code>libcrypto.a</code> 和 <code>libssl.a</code> 文件直接放入已有的 <code>armeabi</code> 文件夹中即可。</p>
+
+<h3>在 Android.mk 文件中添加 OpenSSL 头文件搜索路径</h3>
+
+<p>用趁手的编辑器打开 <code>Your_Cocos2d-x_Project_Path/proj.android/jni/Android.mk</code> 文件，将 OpenSSL 头文件路径添加到 <code>LOCAL_C_INCLUDES</code> 变量中。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>LOCAL_C_INCLUDES :<span class="o">=</span> <span class="se">\</span>
+</span><span class='line'>  <span class="c"># ... Some Other Paths \</span>
+</span><span class='line'>  <span class="k">$(</span>LOCAL_PATH<span class="k">)</span>/../../Classes/security/openssl/include <span class="se">\</span>
+</span><span class='line'>  <span class="c"># ... Some Other Paths \</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>走个捷径</h2>
+
+<p>如果你觉得编译太麻烦，要编译的东西太多太复杂，或者手头没有编译环境，翻墙下载个 NDK 又太费劲巴拉巴拉&hellip;&hellip;总之你不想自己编译 OpenSSL 的静态链接库，那么你可以走一个捷径。直接使用我已经编译好的文件即可。<a href="https://github.com/leenjewel/openssl_for_ios_and_android">我已经把编译好的 OpenSSL 静态链接库放在 GitHub 上方便大家自取了</a>。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>git clone git@github.com:leenjewel/openssl_for_ios_and_android.git
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>参考资料</h2>
+
+<p>如果你的 Cocos2d-x 项目编译运行成功，那么恭喜你，OpenSSL 库已经接入到你得项目中了，你已经可以调用 OpenSSL 的 API 来实现你自己的需求了。这里附上两个相关的资料供你参考：</p>
+
+<blockquote><p>《How-To-Build-openssl-For-iOS》</p>
+
+<p>《Compiling the latest OpenSSL for Android》</p></blockquote>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[【学习Xv6】加载并运行内核]]></title>

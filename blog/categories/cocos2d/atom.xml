@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: cocos2d | leenjewel Blog]]></title>
+  <link href="http://leenjewel.github.io/blog/categories/cocos2d/atom.xml" rel="self"/>
+  <link href="http://leenjewel.github.io/"/>
+  <updated>2015-06-30T16:48:29+08:00</updated>
+  <id>http://leenjewel.github.io/</id>
+  <author>
+    <name><![CDATA[leenjewel]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[在 Cocos2d-x 中使用 OpenSSL]]></title>
+    <link href="http://leenjewel.github.io/blog/2015/06/30/zai-cocos2d-x-zhong-shi-yong-openssl/"/>
+    <updated>2015-06-30T14:13:22+08:00</updated>
+    <id>http://leenjewel.github.io/blog/2015/06/30/zai-cocos2d-x-zhong-shi-yong-openssl</id>
+    <content type="html"><![CDATA[<p>在我们使用 Cocos2d-x 引擎制作游戏过程中经常会遇到诸如对数据进行加密、解密、MD5、SHA1 散列计算等操作的需求。对于这样的需求使用 OpenSSL 库来解决是最为方便的。下面我们就说说如何将 OpenSSL 库集成到 Cocos2d-x 项目中并在 iOS 和 Android 平台下使用。什么？！不知道 OpenSSL 是什么？这么大名鼎鼎的开源项目，<a href="https://zh.wikipedia.org/wiki/OpenSSL">移步 Wiki </a>去了解吧。</p>
+
+<h2>下载 OpenSSL 源代码</h2>
+
+<p>直接到 OpenSSL 开源项目官网去<a href="https://www.openssl.org/source/openssl-1.0.2c.tar.gz">下载</a>最新版本即可。我下载的是<code>openssl-1.0.2c</code></p>
+
+<h2>编译生成 iOS 平台下适用的 OpenSSL 静态链接库</h2>
+
+<p>首先解压缩你下载的 OpenSSL 源代码压缩包。</p>
+
+<p><code>sh
+tar -zxvf openssl-1.0.2c.tar.gz
+</code></p>
+
+<p>玩过 Linux 的人都知道从源代码编译程序一般需要三步：</p>
+
+<ol>
+<li>./Configure</li>
+<li>make</li>
+<li>make install</li>
+</ol>
+
+
+<p>编译 OpenSSL 生成静态链接库的过程也一样，唯一的区别是我们要针对不同的平台架构生成针对每个平台架构的静态链接库。例如 iPhone、iPad 目前有三种架构：<code>arm64</code>、<code>armv7s</code>和<code>armv7</code>外加模拟器的架构 <code>i386</code>，所以我们要重复上面三个步骤 4 次，生成四个平台架构对应的静态链接库。</p>
+
+<p>这里我们偷个懒，用<a href="https://raw.githubusercontent.com/Raphaelios/raphaelios-scripts/master/openssl/build-openssl.sh"> GitHub 上 Raphaelios 写的 Shell 脚本</a>来直接编译 OpenSSL ，下面我贴出脚本的源码并简单添加一些说明注释。</p>
+
+<p>```sh</p>
+
+<h1>!/bin/bash</h1>
+
+<p>#</p>
+
+<h1>Copyright &copy; 2013 Claudiu-Vlad Ursache <a href="&#x6d;&#x61;&#105;&#x6c;&#116;&#x6f;&#58;&#x63;&#108;&#x61;&#117;&#x64;&#105;&#117;&#64;&#99;&#x76;&#117;&#114;&#x73;&#x61;&#x63;&#104;&#101;&#x2e;&#99;&#x6f;&#x6d;">&#99;&#x6c;&#x61;&#117;&#100;&#x69;&#x75;&#64;&#99;&#118;&#x75;&#x72;&#x73;&#x61;&#99;&#104;&#x65;&#46;&#99;&#x6f;&#x6d;</a></h1>
+
+<h1>MIT License (see LICENSE.md file)</h1>
+
+<p>#</p>
+
+<h1>Based on work by Felix Schulze:</h1>
+
+<p>#</p>
+
+<h1>Automatic build script for libssl and libcrypto</h1>
+
+<h1>for iPhoneOS and iPhoneSimulator</h1>
+
+<p>#</p>
+
+<h1>Created by Felix Schulze on 16.12.10.</h1>
+
+<h1>Copyright 2010 Felix Schulze. All rights reserved.</h1>
+
+<p>#</p>
+
+<h1>Licensed under the Apache License, Version 2.0 (the &ldquo;License&rdquo;);</h1>
+
+<h1>you may not use this file except in compliance with the License.</h1>
+
+<h1>You may obtain a copy of the License at</h1>
+
+<p>#</p>
+
+<h1><a href="http://www.apache.org/licenses/LICENSE-2.0">http://www.apache.org/licenses/LICENSE-2.0</a></h1>
+
+<p>#</p>
+
+<h1>Unless required by applicable law or agreed to in writing, software</h1>
+
+<h1>distributed under the License is distributed on an &ldquo;AS IS&rdquo; BASIS,</h1>
+
+<h1>WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</h1>
+
+<h1>See the License for the specific language governing permissions and</h1>
+
+<h1>limitations under the License.</h1>
+
+<h1>当执行时使用到未定义过的变量，则显示错误信息</h1>
+
+<p>set -u</p>
+
+<h1>Setup architectures, library name and other vars + cleanup from previous runs</h1>
+
+<h1>四个平台架构标识</h1>
+
+<p>ARCHS=(&ldquo;arm64&rdquo; &ldquo;armv7s&rdquo; &ldquo;armv7&rdquo; &ldquo;i386&rdquo;)</p>
+
+<h1>四个平台架构分别对应的 SDK 名称</h1>
+
+<p>SDKS=(&ldquo;iphoneos&rdquo; &ldquo;iphoneos&rdquo; &ldquo;iphoneos&rdquo; &ldquo;macosx&rdquo;)</p>
+
+<h1>使用的 OpenSSL 库版本</h1>
+
+<p>LIB_NAME=&ldquo;openssl-1.0.2c&rdquo;</p>
+
+<h1>临时输出目录</h1>
+
+<p>TEMP_LIB_PATH=&ldquo;/tmp/${LIB_NAME}&rdquo;
+LIB_DEST_DIR=&ldquo;lib&rdquo;
+HEADER_DEST_DIR=&ldquo;include&rdquo;
+rm -rf &ldquo;${HEADER_DEST_DIR}&rdquo; &ldquo;${LIB_DEST_DIR}&rdquo; &ldquo;${TEMP_LIB_PATH}*&rdquo; &ldquo;${LIB_NAME}&rdquo;</p>
+
+<h1>Unarchive library, then configure and make for specified architectures</h1>
+
+<h1>编译静态链接库的函数</h1>
+
+<p>configure_make()
+{
+   ARCH=$1; GCC=$2; SDK_PATH=$3;
+   LOG_FILE=&ldquo;${TEMP_LIB_PATH}&ndash;${ARCH}.log&rdquo;
+   tar xfz &ldquo;${LIB_NAME}.tar.gz&rdquo;
+   pushd .; cd &ldquo;${LIB_NAME}&rdquo;;</p>
+
+<p>   ./Configure BSD-generic32 &mdash;openssldir=&ldquo;${TEMP_LIB_PATH}&ndash;${ARCH}&rdquo; &amp;> &ldquo;${LOG_FILE}&rdquo;</p>
+
+<p>   make CC=&ldquo;${GCC} -arch ${ARCH}&rdquo; CFLAG=&ldquo;-isysroot ${SDK_PATH}&rdquo; &amp;> &ldquo;${LOG_FILE}&rdquo;;
+   make install &amp;> &ldquo;${LOG_FILE}&rdquo;;
+   popd; rm -rf &ldquo;${LIB_NAME}&rdquo;;
+}</p>
+
+<h1>分别开始编译四个平台架构的静态链接库</h1>
+
+<p>for ((i=0; i &lt; ${#ARCHS[@]}; i++))
+do
+   # 获取 SDK 路径
+   SDK_PATH=$(xcrun -sdk ${SDKS[i]} &mdash;show-sdk-path)
+   # 过去 gcc 编译器路径
+   GCC=$(xcrun -sdk ${SDKS[i]} -find gcc)
+   # 编译
+   configure_make &ldquo;${ARCHS[i]}&rdquo; &ldquo;${GCC}&rdquo; &ldquo;${SDK_PATH}&rdquo;
+done</p>
+
+<h1>Combine libraries for different architectures into one</h1>
+
+<h1>Use .a files from the temp directory by providing relative paths</h1>
+
+<h1>通过 lipo 命令将四个平台架构的静态库打包成一个静态库</h1>
+
+<p>create_lib()
+{
+   LIB_SRC=$1; LIB_DST=$2;
+   LIB_PATHS=( &ldquo;${ARCHS[@]/#/${TEMP_LIB_PATH}&ndash;}&rdquo; )
+   LIB_PATHS=( &ldquo;${LIB_PATHS[@]/%//${LIB_SRC}}&rdquo; )
+   lipo ${LIB_PATHS[@]} -create -output &ldquo;${LIB_DST}&rdquo;
+}
+mkdir &ldquo;${LIB_DEST_DIR}&rdquo;;
+create_lib &ldquo;lib/libcrypto.a&rdquo; &ldquo;${LIB_DEST_DIR}/libcrypto.a&rdquo;
+create_lib &ldquo;lib/libssl.a&rdquo; &ldquo;${LIB_DEST_DIR}/libssl.a&rdquo;</p>
+
+<h1>Copy header files + final cleanups</h1>
+
+<p>mkdir -p &ldquo;${HEADER_DEST_DIR}&rdquo;
+cp -R &ldquo;${TEMP_LIB_PATH}&ndash;${ARCHS[0]}/include&rdquo; &ldquo;${HEADER_DEST_DIR}&rdquo;
+rm -rf &ldquo;${TEMP_LIB_PATH}&ndash;*&rdquo; &ldquo;{LIB_NAME}&rdquo;
+```</p>
+
+<p>这个脚本的用法就是将脚本和刚刚下载的 OpenSSL 源码压缩包放在同一个目录下，然后不用解压 OpenSSL 压缩包，直接运行脚本即可。</p>
+
+<p><code>sh
+sh  build-openssl.sh
+</code></p>
+
+<p>耐心等待片刻之后，如果没有任何报错信息，则会在脚本所在目录多出两个目录 <code>include</code> 和 <code>lib</code>，在 <code>lib</code> 目录下就是我们刚刚通过脚本生成好的静态链接库 <code>libcrypto.a</code> 和 <code>libssl.a</code>。</p>
+
+<h2>编译生成 Android 平台下适用的 OpenSSL 静态链接库</h2>
+
+<p>接下来我们继续编译 Android 平台下的 OpenSSL 静态链接库。编译 Android 下的静态链接库自然要用到 NDK。所以首先要确保你下载了 NDK。我这里使用的是 <code>android-ndk-r10d</code>。</p>
+
+<p>同样根据平台架构不同 Android 下面可以生成 <code>arm</code>、<code>armv7</code>和<code>x86</code>。具体的生成步骤都是直接在命令行下执行的。</p>
+
+<p>首先解压缩你的 OpenSSL 源代码压缩包并跳转至解压缩后的源代码目录.</p>
+
+<p><code>sh
+tar -zxvf openssl-1.0.2c.tar.gz
+cd openssl-1.0.2c
+</code></p>
+
+<h3>armv7a</h3>
+
+<p>```sh</p>
+
+<h1>设置你自己的 NDK 路径</h1>
+
+<p>export NDK=/Your Android NDK Path/android-ndk-r10d
+$NDK/build/tools/make-standalone-toolchain.sh &mdash;platform=android-9 &mdash;toolchain=arm-linux-androideabi-4.6 &mdash;install-dir=<code>pwd</code>/android-toolchain-arm
+export TOOLCHAIN_PATH=<code>pwd</code>/android-toolchain-arm/bin
+export TOOL=arm-linux-androideabi
+export NDK_TOOLCHAIN_BASENAME=${TOOLCHAIN_PATH}/${TOOL}
+export CC=$NDK_TOOLCHAIN_BASENAME-gcc
+export CXX=$NDK_TOOLCHAIN_BASENAME-g++
+export LINK=${CXX}
+export LD=$NDK_TOOLCHAIN_BASENAME-ld
+export AR=$NDK_TOOLCHAIN_BASENAME-ar
+export RANLIB=$NDK_TOOLCHAIN_BASENAME-ranlib
+export STRIP=$NDK_TOOLCHAIN_BASENAME-strip
+export ARCH_FLAGS=&ldquo;-march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16&rdquo;
+export ARCH_LINK=&ldquo;-march=armv7-a -Wl,&mdash;fix-cortex-a8&rdquo;
+export CPPFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &rdquo;
+export CXXFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 -frtti -fexceptions &rdquo;
+export CFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &rdquo;
+export LDFLAGS=&ldquo; ${ARCH_LINK} &rdquo;
+./Configure android-armv7
+PATH=$TOOLCHAIN_PATH:$PATH make
+```</p>
+
+<p>上述命令运行完成后，同样你会在 OpenSSL 源代码目录发现新生成的两个静态链接库文件<code>libcrypto.a</code> 和 <code>libssl.a</code>。我们新建一个目录 <code>armeabi-v7a</code> 将两个新生成的静态链接库文件移动到这个文件夹中备用。</p>
+
+<p>然后我们删除掉刚刚解压缩的 OpenSSL 源码目录，重新解压缩 OpenSSL 的源代码压缩包，准备继续编译生成另外平台架构的静态链接库。</p>
+
+<h3>arm</h3>
+
+<p>```sh</p>
+
+<h1>设置你自己的 NDK 路径</h1>
+
+<p>export NDK=/Your Android NDK Path/android-ndk-r10d
+$NDK/build/tools/make-standalone-toolchain.sh &mdash;platform=android-9 &mdash;toolchain=arm-linux-androideabi-4.6 &mdash;install-dir=<code>pwd</code>/android-toolchain-arm
+export TOOLCHAIN_PATH=<code>pwd</code>/android-toolchain-arm/bin
+export TOOL=arm-linux-androideabi
+export NDK_TOOLCHAIN_BASENAME=${TOOLCHAIN_PATH}/${TOOL}
+export CC=$NDK_TOOLCHAIN_BASENAME-gcc
+export CXX=$NDK_TOOLCHAIN_BASENAME-g++
+export LINK=${CXX}
+export LD=$NDK_TOOLCHAIN_BASENAME-ld
+export AR=$NDK_TOOLCHAIN_BASENAME-ar
+export RANLIB=$NDK_TOOLCHAIN_BASENAME-ranlib
+export STRIP=$NDK_TOOLCHAIN_BASENAME-strip
+export ARCH_FLAGS=&ldquo;-mthumb&rdquo;
+export ARCH_LINK=
+export CPPFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &rdquo;
+export CXXFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 -frtti -fexceptions &rdquo;
+export CFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &rdquo;
+export LDFLAGS=&ldquo; ${ARCH_LINK} &rdquo;
+./Configure android
+PATH=$TOOLCHAIN_PATH:$PATH make
+```</p>
+
+<p>然后我们新建一个目录 <code>armeabi</code> 将新生成的静态链接库文件 <code>libcrypto.a</code> 和 <code>libssl.a</code> 移动到这个文件夹中备用。删除掉源代码目录，重新解压，继续编译生成静态链接库。</p>
+
+<h3>x86</h3>
+
+<p>```sh</p>
+
+<h1>设置你自己的 NDK 路径</h1>
+
+<p>export NDK=/Your Android NDK Path/android-ndk-r10d
+$NDK/build/tools/make-standalone-toolchain.sh &mdash;platform=android-9 &mdash;toolchain=x86-4.6 &mdash;install-dir=<code>pwd</code>/android-toolchain-x86
+export TOOLCHAIN_PATH=<code>pwd</code>/android-toolchain-x86/bin
+export TOOL=i686-linux-android
+export NDK_TOOLCHAIN_BASENAME=${TOOLCHAIN_PATH}/${TOOL}
+export CC=$NDK_TOOLCHAIN_BASENAME-gcc
+export CXX=$NDK_TOOLCHAIN_BASENAME-g++
+export LINK=${CXX}
+export LD=$NDK_TOOLCHAIN_BASENAME-ld
+export AR=$NDK_TOOLCHAIN_BASENAME-ar
+export RANLIB=$NDK_TOOLCHAIN_BASENAME-ranlib
+export STRIP=$NDK_TOOLCHAIN_BASENAME-strip
+export ARCH_FLAGS=&ldquo;-march=i686 -msse3 -mstackrealign -mfpmath=sse&rdquo;
+export ARCH_LINK=
+export CPPFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &rdquo;
+export CXXFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 -frtti -fexceptions &rdquo;
+export CFLAGS=&ldquo; ${ARCH_FLAGS} -fpic -ffunction-sections -funwind-tables -fstack-protector -fno-strict-aliasing -finline-limit=64 &rdquo;
+export LDFLAGS=&ldquo; ${ARCH_LINK} &rdquo;
+./Configure android-x86
+PATH=$TOOLCHAIN_PATH:$PATH make
+<code>``
+同样我们新建一个目录</code>x86<code>用来存放新生成的静态链接库文件</code>libcrypto.a<code>和</code>libssl.a`。</p>
+
+<h2>将 OpenSSL 接入 Cocos2d-x 项目</h2>
+
+<p>iOS 和 Android 适用的 OpenSSL 静态链接库我们都已经编译生成了。下面看看我们怎么将 OpenSSL 静态链接库接入到 Cocos2d-x 项目中来使用。</p>
+
+<h3>引入 iOS 适用的 OpenSSL 静态链接库</h3>
+
+<p>首先这里要说明的是我使用的 Cocos2d-x 版本是 3.6。我们先在 Cocos2d-x  项目中新建一个文件夹。</p>
+
+<p><code>sh
+mkdir -p Your_Cocos2d-x_Project_Path/Classes/security/openssl
+</code></p>
+
+<p>然后我们将 iOS 适用的 OpenSSL 静态链接库文件 <code>libcrypto.a</code> 和 <code>libssl.a</code> 拷贝到我们刚刚新建的目录下。</p>
+
+<p>在 Xcode 中将 OpenSSL 的静态链接库文件<code>libcrypto.a</code> 和 <code>libssl.a</code> 引入到项目中。具体做法就是在 <code>[Build Phases] ====&gt; [Link Binary With Libraries]</code> 中添加对两个静态链接库的引用。</p>
+
+<h3>在 Xcode 中添加 OpenSSL 头文件搜索路径</h3>
+
+<p>然后我们再新建一个用于存放 OpenSSL 头文件的文件夹</p>
+
+<p><code>sh
+mkdir -p Your_Cocos2d-x_Project_Path/Classes/security/openssl/include/openssl
+</code></p>
+
+<p>将我们刚刚生成 iOS 适用的 OpenSSL 静态链接库文件时生成的 <code>include</code> 文件夹下面找到的所有的 <code>.h</code> 头文件全部复制到我们刚刚生成的目录下面。</p>
+
+<p><strong>这里需要特别注意</strong>的是包含 OpenSSL 头文件的文件夹必须叫作 <strong>openssl</strong> ，否则项目编译会不成功。</p>
+
+<p>然后继续在 Xcode 中设置 OpenSSL 头文件的搜索路径。具体做法就是在 <code>[Build Settings] ====&gt; [User Header Search Paths]</code> 中添加刚刚我们建立的用于存放 OpenSSL 头文件的目录的路径。要添加的路径为 <code>Your_Cocos2d-x_Project_Path/Classes/security/openssl/include</code></p>
+
+<h3>引入 Android 适用的 OpenSSL 静态链接库</h3>
+
+<p>我们把刚刚用于存放 OpenSSL 静态链接库文件的 <code>armeabi</code> 文件夹拷贝到 Cocos2d-x 项目中来，拷贝的位置是 Android 用于存放库文件的 <code>libs</code> 文件夹。</p>
+
+<p>```sh
+cp -ivr Your_OpenSSL_Android_Path/armeabi  \</p>
+
+<pre><code>Your_Cocos2d-x_Project_Path/proj.android/libs/
+</code></pre>
+
+<p>```</p>
+
+<p><strong>这里需要特别注意</strong>如果你的 Cocos2d-x 项目原本已经有了 <code>armeabi</code> 文件夹，注意不要覆盖，而是将 <code>libcrypto.a</code> 和 <code>libssl.a</code> 文件直接放入已有的 <code>armeabi</code> 文件夹中即可。</p>
+
+<h3>在 Android.mk 文件中添加 OpenSSL 头文件搜索路径</h3>
+
+<p>用趁手的编辑器打开 <code>Your_Cocos2d-x_Project_Path/proj.android/jni/Android.mk</code> 文件，将 OpenSSL 头文件路径添加到 <code>LOCAL_C_INCLUDES</code> 变量中。</p>
+
+<p>```
+LOCAL_C_INCLUDES := \</p>
+
+<pre><code># ... Some Other Paths \
+$(LOCAL_PATH)/../../Classes/security/openssl/include \
+# ... Some Other Paths \
+</code></pre>
+
+<p>```</p>
+
+<h2>走个捷径</h2>
+
+<p>如果你觉得编译太麻烦，要编译的东西太多太复杂，或者手头没有编译环境，翻墙下载个 NDK 又太费劲巴拉巴拉&hellip;&hellip;总之你不想自己编译 OpenSSL 的静态链接库，那么你可以走一个捷径。直接使用我已经编译好的文件即可。<a href="https://github.com/leenjewel/openssl_for_ios_and_android">我已经把编译好的 OpenSSL 静态链接库放在 GitHub 上方便大家自取了</a>。</p>
+
+<p><code>sh
+git clone git@github.com:leenjewel/openssl_for_ios_and_android.git
+</code></p>
+
+<h2>参考资料</h2>
+
+<p>如果你的 Cocos2d-x 项目编译运行成功，那么恭喜你，OpenSSL 库已经接入到你得项目中了，你已经可以调用 OpenSSL 的 API 来实现你自己的需求了。这里附上两个相关的资料供你参考：</p>
+
+<blockquote><p>《How-To-Build-openssl-For-iOS》</p>
+
+<p>《Compiling the latest OpenSSL for Android》</p></blockquote>
+]]></content>
+  </entry>
+  
+</feed>
