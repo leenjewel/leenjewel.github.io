@@ -1751,7 +1751,7 @@
 
 <p>结合这两次 <code>readelf</code> 命令的输出我们不难看出，内核文件的 ELF 程序头表中只有第一个是需要被加载的，而这个程序头表指出的加载位置 <code>0x80100000</code> 和内核程序的代码段 <code>.text</code> 的位置是一样的。</p>
 
-<p>而要加载的段是 <code>.text .rodata .stab .stabstr .data .bss</code> ，这些段在内存中的大小总和是 <code>0x008111 + 0x000672 + 0x000001 + 0x000001 + 0x002596 + 0x00715c = 0x73335</code> 按照对齐要求 <code>0x1000</code> 对齐后为 <code>0x75516</code> 和 ELF 程序头表中的内存大小信息一致。</p>
+<p>而要加载的段是 <code>.text .rodata .stab .stabstr .data .bss</code> ，这些段在内存中的大小总和是<del><code>0x008111 + 0x000672 + 0x000001 + 0x000001 + 0x002596 + 0x00715c = 0x73335</code> 按照对齐要求 <code>0x1000</code> 对齐后为 <code>0x75516</code> 和 ELF 程序头表中的内存大小信息一致</del>（这里特别感谢<a href="https://xuzhenglun.github.io/">@徐正伦同学的指正</a>）<code>0x008111 + 0x000672 + 0x000001 + 0x000001 + 0x002596 + 0x00715c = 73335 即 0x11e77</code> 按照对齐要求 <code>0x1000</code> 对齐后为 <code>75516 即 0x000126fc（注意大小端转换，FC 26 01 00 是按照小端排列的，转换成正常的十六进制数为 0x000126fc）</code> 和 ELF 程序头表中的内存大小信息一致。</p>
 
 <p>我们再算算这些段在文件中的大小，由于这些段在文件中是顺序排列的，所以用 <code>.bss段</code> 的文件偏移量减去 <code>.text段</code> 的文件偏移量 <code>0x00c596 - 0x001000 = 46486</code> 这也是和 ELF 程序头表中段在文件中大小的信息一致。</p>
 
