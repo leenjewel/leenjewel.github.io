@@ -105,7 +105,7 @@ public final class R {
 }
 ```
 
-###观测结果：
+###【试验1】观测结果：
 
 - 1、三个 R.java 文件中资源的 ID 相同。
 - 2、三个 R.java 文件的 package 不同。
@@ -229,6 +229,170 @@ public final class R {
 }
 ```
 
-###观测结果：
+###【试验2】观测结果：
 
 - 1、改变资源路径顺序后 R.java 文件中资源 ID 的值发生了变化。
+
+注意，这次我们不提交文件的变动，将主工程还原到调整资源路径顺序之前的状态然后继续我们的试验。
+
+##【试验3】将资源生成 APK 包
+
+下面我们要将主工程和两个依赖库工程的资源打包，这也是 Android 应用程序 apk 包生成过程中的步骤之一。这里我们直接给出命令：
+
+```sh
+$aapt package -f -M AndroidManifest.xml -S ./res -S ../AndroidLibProjectA/res -S ../AndroidLibProjectB/res -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar -F ./out/res.apk --auto-add-overlay
+```
+
+这个命令看上去多多少少和刚刚生成 R.java 的命令有些类似，如果执行顺利的话会在主工程根目录下面的 `out` 目录下生成一个叫做 `res.apk` 的包。当然这个包并不能在 Android 设备上运行，这只是个半成品，我们继续。
+
+了解 Android 开发的人都知道 apk 其实就是一个 zip 压缩包，用 zip 解压缩软件就可以进行解压缩操作。但是当我们尝试通过 zip 解压缩我们刚刚生成的 `res.apk` 后发现里面并不是简简单单的将我们的资源文件直接打包进去而是额外的还做了一些类似于编译的操作，例如我们之前编辑过的 `res/values/strings.xml` 资源就已经被“编译”成为 `resources.arsc` 文件的一部分，而诸如 `AndroidManifest.xml` 这样的文件也不再是明文的我们可以看懂的格式了。
+
+这时我们需要一个工具将我们刚刚生成的这个 `res.apk` 包“反编译”回来，这个好用的工具就是 [apktool](https://ibotpeaches.github.io/Apktool/)，下载这个工具后我们来“反编译”我们的 apk 包：
+
+```sh
+$java -jar apktool.jar d res.apk
+```
+
+如果执行顺利的话我们在 `res.apk` 包所在的同级目录下可以看到一个 `res` 目录，里面就是刚刚通过 apktool 反编译回来的文件，我们重点观察两个文件：
+
+- `ic_launcher.png` 文件
+- `res/values/strings.xml` 文件
+
+由于之前我们给主工程和两个依赖库工程的 `ic_launcher.png` 文件做过标记，所以这时候不难看出：
+
+###【试验3】观测结果：
+
+- 1、`res.apk` 包中 `ic_launcher.png` 文件来自 AndroidTestProject 即来自主工程。
+- 2、`res.apk` 包中 `res/values/strings.xml` 文件的资源 `same_thing` 和 `app_name` 的值来自 AndroidTestProject 即来自主工程。
+
+- `res/values/strings.xml` 文件
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MainActivity</string>
+    <string name="same_thing">SameP</string>
+    <string name="b_thing">BThing</string>
+    <string name="a_thing">AThing</string>
+    <string name="p_thing">PThing</string>
+</resources>
+```
+
+不用提交任何代码，我们试验继续。
+
+##【试验4】改变资源路径顺序重新生成 APK 包
+
+把刚刚第一次生成的 `res.apk` 和用 apktool 反编译出来的 `res` 目录都删掉。为了方便对比，再看一眼刚刚用来生成 apk 的命令：
+
+```sh
+$aapt package -f -M AndroidManifest.xml -S ./res -S ../AndroidLibProjectA/res -S ../AndroidLibProjectB/res -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar -F ./out/res.apk --auto-add-overlay
+```
+
+然后我们依然是调整一下 `-S` 命令参数的顺序和刚才一样我们把主工程的 `res` 目录和依赖库工程 AndroidLibProjectA 的 `res` 目录调换顺序再生成一下 apk 包看看：
+
+```sh
+$aapt package -f -M AndroidManifest.xml -S ../AndroidLibProjectA/res -S ./res -S ../AndroidLibProjectB/res -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar -F ./out/res.apk --auto-add-overlay
+```
+
+重新生成新的 `res.apk` 包之后我们还是用 apktool 将包进行反编译然后观察：
+
+###【试验4】观测结果：
+
+- 1、`res.apk` 包中 `ic_launcher.png` 文件来自 AndroidLibProjectA 即来自依赖库 A 工程。
+- 2、`res.apk` 包中 `res/values/strings.xml` 文件的资源 `same_thing` 和 `app_name` 的值来自 AndroidLibProjectA 即来自依赖库 A 工程。
+
+- `res/values/strings.xml` 文件
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">A</string>
+    <string name="same_thing">SameA</string>
+    <string name="b_thing">BThing</string>
+    <string name="p_thing">PThing</string>
+    <string name="a_thing">AThing</string>
+</resources>
+```
+如果你觉得意犹未尽那么可以尝试再次调整资源路径顺序，这次把依赖库 B 工程的资源目录的顺序放在最前面然后重复试验 4 的步骤再次生成 `res.apk` 包并使用 apktool 反编译之后观察试验结果。而我们不打算再这么做了，因为结果已经很明确了。
+
+试验就暂时做到这，接下来我们说说通过这四个无聊的小试验我们了解到了什么。
+
+##Android APK 生成过程
+
+Google 一下网络上详细介绍这个的内容很多，这里我们只做个概括总结：
+
+- 生成 `R.java` 文件，这个刚刚我们做过。
+- 将资源打包成 `apk` 文件，这个我们刚刚也做过。
+- 将 Java 源文件编译成 class 文件。
+- 通过 `dex` 命令将刚刚编译的 class 文件编译成 `dex` 文件
+- 将刚刚生成的 `dex` 文件通过 `aapt add` 命令加入到刚刚生成的 `apk` 包中。
+- 如果应用程序使用了 NDK ，则还要将 `libs` 目录中的 `.so` 链接库文件也通过 `aapt add` 命令加入到刚刚生成的 `apk` 包中。
+- 最后对 `apk` 包进行签名。大功告成~
+
+这里需要多唠叨几句的是：网络上大多告诉最后通过一个叫做 `apkbuilder` 的工具生成最终的 `apk` 包的方式已经过时了。Google 已经在 Android SDK 中将这个工具给删除掉了，现在都是通过 `aapt add` 命令来往资源包里添加其他文件的方式来形成最终的 `apk` 包了。
+
+放置在工程 `libs` 目录下的各种链接库文件也要先集中放置在一个 `lib` 目录下面然后在统一通过 `aapt add` 命令进行引入操作。例如：
+
+```sh
+$aapt add res.apk lib/armeabi/xxx.so
+```
+
+据说 Windows 环境下执行上述 `aapt add` 命令时路径也要用类 Unix 系统的斜杠而不能用 Windows 的反斜杠，我手边没有 Windows 环境没有亲自尝试。
+
+前面也说了在国内特殊的 Android 开发环境下你的 Android 应用不接入几个第三方 SDK 你出门都不好意思和别人打招呼。甚至有时我们为了针对各种不同的渠道，一个 Android 应用程序出包时要不停的切换各种第三方 SDK 依赖，想必搞过 Android 开发的人都知道这是个很头疼的问题。
+
+而我写这篇主要就是要探讨这个问题的解决办法，包括前面做的这四个试验和 Android apk 打包原理的介绍都是为了接下来我们要探讨的东西做个铺垫，只有充分了解了上面这些基本原理才能找到 Android 应用出包时如何解决复杂的第三方 SDK 依赖问题的有效方法。
+
+结合我们试验了解到的知识从简到难先来说说三种 Android 集成第三方依赖的方式。
+
+##【集成方式1】以标准 Android Library Project 方式集成
+
+我们一般在使用自己内部开发的一些公共库或公共组件时会选用这种方式。所有的资源和代码都以标准的 Android Library Porject 的形式呈现，开发应用时只需要声明引用这些库工程即可。
+
+通过刚刚的试验我们知道只要引入资源的路径顺序不变，主工程和依赖库工程所生成的 `R.java` 文件中资源 ID 的值是一样的。所以在开发依赖库工程时，在依赖库工程中通过自己的 R 类来引用资源写好的逻辑代码在主工程中同样是可以正常工作的。
+
+##【集成方式2】依赖库通过复制粘贴进主工程的方式集成
+
+如果我们开发的库要发布给第三方使用的时候，一般会将代码混淆打包成 `jar` 文件连同资源文件一起发送给第三方。第三方拿到这样形式的 SDK 后一般会将资源文件合并进主工程的 `res` 文件夹内，将 `jar` 包合并进主工程的 `libs` 文件夹内。
+
+这时由于库使用的资源文件是直接放置在主工程中的，所以最终生成的资源 ID 是不同的。存在于 `jar` 包中的库逻辑如果还是按照 R 类来引用资源的话就不行了。因为库逻辑是不可能预先知道主工程的包名的，这时只能通过 Java 的“反射”机制来进行资源引用了。举个例子：
+
+```java
+private int getResId(String resType, String resName) {
+	try {
+		Class localClass = Class.forName(getPackageName() + ".R$" + resType);
+		Field localField = localClass.getField(resName);
+		return Integer.parseInt(localField.get(localField.getName()).toString());
+	} catch (ClassNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (NoSuchFieldException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (NumberFormatException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IllegalAccessException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	} catch (IllegalArgumentException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	return 0;
+}
+```
+
+这是个通过 Java “反射”机制查找资源 ID 的方法。一般我们引用资源时会这样写：
+
+```java
+Button btn = (Button)findViewById(R.id.btn1);
+```
+
+而在这种方式引入的依赖库中一般会通过上述的自有方法来获取资源 ID
+
+```java
+Button btn = (Button)findViewById(getResId("id", "btn1"));
+```
+
+##【集成方式3】通过二次打包的方式集成
