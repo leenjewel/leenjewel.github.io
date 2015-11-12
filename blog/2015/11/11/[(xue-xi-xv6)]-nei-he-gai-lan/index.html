@@ -1,0 +1,838 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>【学习Xv6】 内核概览 - leenjewel Blog</title>
+	<meta name="author" content="leenjewel">
+
+	
+	<meta name="description" content="前情提要 上一篇《【学习Xv6】加载并运行内核》讲到内核已经成功加载到内存中开始运行了。内核可以说是一个操作系统最核心的部件了，所以涉及要讲的内容非常非常多，我们先缓一缓脚步，对内核有一个大致的了解然后在细细的去品味它。 内核的组成 要想知道内核里都有些什么还是要从 Makefile &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="leenjewel Blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><nav id="title-nav">
+<h1><a href="/">leenjewel Blog</a></h1>
+
+<h2>Anything about code.</h2>
+
+</nav>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:leenjewel.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+		<a class="github" href="https://github.com/leenjewel" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:leenjewel.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">【学习Xv6】 内核概览</h2>
+	<div class="entry-content"><h2>前情提要</h2>
+
+<p>上一篇<a href="http://leenjewel.github.io/blog/2015/05/26/%5B%28xue-xi-xv6%29%5D-jia-zai-bing-yun-xing-nei-he/">《【学习Xv6】加载并运行内核》</a>讲到内核已经成功加载到内存中开始运行了。内核可以说是一个操作系统最核心的部件了，所以涉及要讲的内容非常非常多，我们先缓一缓脚步，对内核有一个大致的了解然后在细细的去品味它。</p>
+
+<h2>内核的组成</h2>
+
+<p>要想知道内核里都有些什么还是要从 <code>Makefile</code> 入手看看组成内核都使用了那些源码文件。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>kernel: $(OBJS) entry.o entryother initcode kernel.ld
+</span><span class='line'>    $(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode entryother
+</span><span class='line'>    $(OBJDUMP) -S kernel &gt; kernel.asm
+</span><span class='line'>    $(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' &gt; kernel.sym</span></code></pre></td></tr></table></div></figure>
+
+
+<p>而 <code>$(OBJS)</code> 变量由于内容较多我们只列出其中的一部分</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>OBJS = \
+</span><span class='line'>  bio.o\
+</span><span class='line'>  console.o\
+</span><span class='line'>  exec.o\
+</span><span class='line'>  file.o\
+</span><span class='line'>  fs.o\
+</span><span class='line'>  ide.o\
+</span><span class='line'>  ioapic.o\
+</span><span class='line'>  kalloc.o\
+</span><span class='line'>  ......</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从这些 <code>.o</code> 文件的文件名不难看出这些都是内核基本功能的组成部分，这也是我们以后研究的重点，既然这篇是概览我们暂时先不去关心这些组件。</p>
+
+<p>除去组件剩下的文件就只有这几个：<code>entry.S</code>、<code>initcode.S</code> 和 <code>entryother.S</code> 而这几个文件我们要从哪一个先入手呢？这要听 <code>kernel.ld</code> 文件的，因为链接器在链接生成最终的内核时也是听 <code>kernel.ld</code> 文件的安排的。</p>
+
+<p><code>.ld</code> 文件是链接器配置文件或者叫链接脚本，它有自己的一套语法，链接器最终会根据链接器配置文件中的规则来生成最终的二进制文件。这里我们就不做具体的语法介绍了，有兴趣的同学请自行 Google 吧，我们只解释一下几个关键点</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/* Simple linker script for the JOS kernel.
+</span><span class='line'>   See the GNU ld 'info' manual ("info ld") to learn the syntax. */
+</span><span class='line'>
+</span><span class='line'>OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
+</span><span class='line'>OUTPUT_ARCH(i386)
+</span><span class='line'>ENTRY(_start)
+</span><span class='line'>
+</span><span class='line'>SECTIONS
+</span><span class='line'>{
+</span><span class='line'>  /* Link the kernel at this address: "." means the current address */
+</span><span class='line'>        /* Must be equal to KERNLINK */
+</span><span class='line'>  . = 0x80100000;
+</span><span class='line'>
+</span><span class='line'>  .text : AT(0x100000) {
+</span><span class='line'>      *(.text .stub .text.* .gnu.linkonce.t.*)
+</span><span class='line'>  }
+</span><span class='line'>
+</span><span class='line'>      /* Adjust the address for the data segment to the next page */
+</span><span class='line'>  . = ALIGN(0x1000);
+</span><span class='line'>
+</span><span class='line'>    // ......
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里只关注四点：</p>
+
+<ul>
+<li><code>ENTRY(_start)</code> 　内核的代码为段执行入口：_start</li>
+<li><code>. = 0x80100000</code> 内核的起始虚拟地址位置为：0x80100000</li>
+<li><code>.text : AT(0x100000)</code> 内核代码段的内存装载地址为：0x100000</li>
+<li><code>. = ALIGN(0x1000)</code> 内核代码段保证 4KB 对齐</li>
+</ul>
+
+
+<p>关于内核起始虚拟地址的问题我们后面遇到了再来说，代码段内存装载地址 <code>0x100000</code> 是不是看着眼熟？没错了，我们在上一篇<a href="http://leenjewel.github.io/blog/2015/05/26/%5B%28xue-xi-xv6%29%5D-jia-zai-bing-yun-xing-nei-he/">《【学习Xv6】加载并运行内核》</a>最后讲到 <code>bootmain.c</code> 文件加载并运行内核时看到过，这里再把上一篇的代码列出来大家回顾一下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// bootmain.c</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span>
+</span><span class='line'><span class="nf">bootmain</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">struct</span> <span class="n">elfhdr</span> <span class="o">*</span><span class="n">elf</span><span class="p">;</span>
+</span><span class='line'>  <span class="k">struct</span> <span class="n">proghdr</span> <span class="o">*</span><span class="n">ph</span><span class="p">,</span> <span class="o">*</span><span class="n">eph</span><span class="p">;</span>
+</span><span class='line'>  <span class="kt">void</span> <span class="p">(</span><span class="o">*</span><span class="n">entry</span><span class="p">)(</span><span class="kt">void</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">uchar</span><span class="o">*</span> <span class="n">pa</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 从 0xa0000 到 0xfffff 的物理地址范围属于设备空间，</span>
+</span><span class='line'>  <span class="c1">// 所以内核放置在 0x10000 处开始</span>
+</span><span class='line'>  <span class="n">elf</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">elfhdr</span><span class="o">*</span><span class="p">)</span><span class="mh">0x10000</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 从内核所在硬盘位置读取一内存页 4kb 数据</span>
+</span><span class='line'>  <span class="n">readseg</span><span class="p">((</span><span class="n">uchar</span><span class="o">*</span><span class="p">)</span><span class="n">elf</span><span class="p">,</span> <span class="mi">4096</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// 省略后面的代码......</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>正式因为链接脚本强制规定了内核代码段在内存中的位置才保证了引导区程序可以顺利的按照约定的地址去引导 CPU 执行内核代码。</p>
+
+<h2>内核引导</h2>
+
+<p>既然知道了内核的入口点是 <code>_start</code> 通过简单的文本搜索不难找到这个入口点在 <code>entry.S</code> 文件中，我们直接先列出代码：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#include &quot;asm.h&quot;</span>
+</span><span class='line'><span class="cp">#include &quot;memlayout.h&quot;</span>
+</span><span class='line'><span class="cp">#include &quot;mmu.h&quot;</span>
+</span><span class='line'><span class="cp">#include &quot;param.h&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp"># Multiboot header.  Data to direct multiboot loader.</span>
+</span><span class='line'><span class="p">.</span><span class="n">p2align</span> <span class="mi">2</span>
+</span><span class='line'><span class="p">.</span><span class="n">text</span>
+</span><span class='line'><span class="p">.</span><span class="n">globl</span> <span class="n">multiboot_header</span>
+</span><span class='line'><span class="nl">multiboot_header:</span>
+</span><span class='line'>  <span class="err">#</span><span class="n">define</span> <span class="n">magic</span> <span class="mh">0x1badb002</span>
+</span><span class='line'>  <span class="err">#</span><span class="n">define</span> <span class="n">flags</span> <span class="mi">0</span>
+</span><span class='line'>  <span class="p">.</span><span class="kt">long</span> <span class="n">magic</span>
+</span><span class='line'>  <span class="p">.</span><span class="kt">long</span> <span class="n">flags</span>
+</span><span class='line'>  <span class="p">.</span><span class="kt">long</span> <span class="p">(</span><span class="o">-</span><span class="n">magic</span><span class="o">-</span><span class="n">flags</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp"># By convention, the _start symbol specifies the ELF entry point.</span>
+</span><span class='line'><span class="cp"># Since we haven&#39;t set up virtual memory yet, our entry point is</span>
+</span><span class='line'><span class="cp"># the physical address of &#39;entry&#39;.</span>
+</span><span class='line'><span class="p">.</span><span class="n">globl</span> <span class="n">_start</span>
+</span><span class='line'><span class="n">_start</span> <span class="o">=</span> <span class="n">V2P_WO</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="cp"># Entering xv6 on boot processor, with paging off.</span>
+</span><span class='line'><span class="p">.</span><span class="n">globl</span> <span class="n">entry</span>
+</span><span class='line'><span class="nl">entry:</span>
+</span><span class='line'>  <span class="err">#</span> <span class="n">Turn</span> <span class="n">on</span> <span class="n">page</span> <span class="n">size</span> <span class="n">extension</span> <span class="k">for</span> <span class="mi">4</span><span class="n">Mbyte</span> <span class="n">pages</span>
+</span><span class='line'>  <span class="n">movl</span>    <span class="o">%</span><span class="n">cr4</span><span class="p">,</span> <span class="o">%</span><span class="n">eax</span>
+</span><span class='line'>  <span class="n">orl</span>     <span class="err">$</span><span class="p">(</span><span class="n">CR4_PSE</span><span class="p">),</span> <span class="o">%</span><span class="n">eax</span>
+</span><span class='line'>  <span class="n">movl</span>    <span class="o">%</span><span class="n">eax</span><span class="p">,</span> <span class="o">%</span><span class="n">cr4</span>
+</span><span class='line'>  <span class="err">#</span> <span class="n">Set</span> <span class="n">page</span> <span class="n">directory</span>
+</span><span class='line'>  <span class="n">movl</span>    <span class="err">$</span><span class="p">(</span><span class="n">V2P_WO</span><span class="p">(</span><span class="n">entrypgdir</span><span class="p">)),</span> <span class="o">%</span><span class="n">eax</span>
+</span><span class='line'>  <span class="n">movl</span>    <span class="o">%</span><span class="n">eax</span><span class="p">,</span> <span class="o">%</span><span class="n">cr3</span>
+</span><span class='line'>  <span class="err">#</span> <span class="n">Turn</span> <span class="n">on</span> <span class="n">paging</span><span class="p">.</span>
+</span><span class='line'>  <span class="n">movl</span>    <span class="o">%</span><span class="n">cr0</span><span class="p">,</span> <span class="o">%</span><span class="n">eax</span>
+</span><span class='line'>  <span class="n">orl</span>     <span class="err">$</span><span class="p">(</span><span class="n">CR0_PG</span><span class="o">|</span><span class="n">CR0_WP</span><span class="p">),</span> <span class="o">%</span><span class="n">eax</span>
+</span><span class='line'>  <span class="n">movl</span>    <span class="o">%</span><span class="n">eax</span><span class="p">,</span> <span class="o">%</span><span class="n">cr0</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="err">#</span> <span class="n">Set</span> <span class="n">up</span> <span class="n">the</span> <span class="n">stack</span> <span class="n">pointer</span><span class="p">.</span>
+</span><span class='line'>  <span class="n">movl</span> <span class="err">$</span><span class="p">(</span><span class="n">stack</span> <span class="o">+</span> <span class="n">KSTACKSIZE</span><span class="p">),</span> <span class="o">%</span><span class="n">esp</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="err">#</span> <span class="n">Jump</span> <span class="n">to</span> <span class="n">main</span><span class="p">(),</span> <span class="n">and</span> <span class="k">switch</span> <span class="n">to</span> <span class="n">executing</span> <span class="n">at</span>
+</span><span class='line'>  <span class="err">#</span> <span class="n">high</span> <span class="n">addresses</span><span class="p">.</span> <span class="n">The</span> <span class="n">indirect</span> <span class="n">call</span> <span class="n">is</span> <span class="n">needed</span> <span class="n">because</span>
+</span><span class='line'>  <span class="err">#</span> <span class="n">the</span> <span class="n">assembler</span> <span class="n">produces</span> <span class="n">a</span> <span class="n">PC</span><span class="o">-</span><span class="n">relative</span> <span class="n">instruction</span>
+</span><span class='line'>  <span class="err">#</span> <span class="k">for</span> <span class="n">a</span> <span class="n">direct</span> <span class="n">jump</span><span class="p">.</span>
+</span><span class='line'>  <span class="n">mov</span> <span class="err">$</span><span class="n">main</span><span class="p">,</span> <span class="o">%</span><span class="n">eax</span>
+</span><span class='line'>  <span class="n">jmp</span> <span class="o">*%</span><span class="n">eax</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="n">comm</span> <span class="n">stack</span><span class="p">,</span> <span class="n">KSTACKSIZE</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里我们直接略去 <code>multiboot_header</code> 这部分。这部分是为了方便通过 <a href="https://zh.wikipedia.org/zh/GNU_GRUB">GNU GRUB</a> 来引导 xv6 系统的。我们直接看 <code>.globl _start</code> 部分，入口只做了一件事儿就是转到 <code>entry</code> 段继续执行。不过别看这里只有一行代码，我们也要说一下。</p>
+
+<p><code>V2P_WO</code> 的定义在 <code>memlayout.h</code> 文件中：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp">#define KERNBASE 0x80000000         </span><span class="c1">// First kernel virtual address</span>
+</span><span class='line'><span class="cp">#define V2P_WO(x) ((x) - KERNBASE)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>它的作用是将内存虚拟地址转换成物理地址。我们现在知道内核的虚拟地址起始于 <code>0x80100000</code> 而对应的内存物理地址是 <code>0x100000</code> ，因为代码的偏移量是一样的即：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="err">指令虚拟地址</span> <span class="o">=</span> <span class="mh">0x80100000</span> <span class="o">+</span> <span class="err">偏移量</span>
+</span><span class='line'><span class="err">指令内存地址</span> <span class="o">=</span> <span class="mh">0x100000</span> <span class="o">+</span> <span class="err">偏移量</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">所以运用初中解方程式的知识</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">执行内存地址</span> <span class="o">=</span> <span class="mh">0x100000</span> <span class="o">+</span> <span class="err">指令虚拟地址</span> <span class="o">-</span> <span class="mh">0x80100000</span>
+</span><span class='line'>             <span class="o">=</span> <span class="err">指令虚拟地址</span> <span class="o">-</span> <span class="mh">0x80000000</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>接下来我们继续看 <code>entry</code> 段做了什么。总结来说一共做了五件事儿：</p>
+
+<ul>
+<li>1、开启 4MB 内存页支持</li>
+<li>2、建立内存页表</li>
+<li>3、开启内存分页机制</li>
+<li>4、设置内核栈顶位置</li>
+<li>5、跳转到 <code>main</code> 继续执行</li>
+</ul>
+
+
+<p>我们一件一件的说。</p>
+
+<h3>开启 4MB 内存分页支持</h3>
+
+<p>这是通过设置寄存器 <code>cr4</code> 的 <code>PSE</code> 位来完成的。<code>cr4</code> 寄存器是个 32 位的寄存器目前只用到低 21 位，每一位的至位都控制这一些功能的状态，所以 <code>cr4</code> 寄存器又叫做控制寄存器。</p>
+
+<p><code>PSE</code> 位是 <code>cr4</code> 控制寄存器的第 5 位，当该位置为 1 时表示内存页大小为 4MB，当置为 0 时表示内存页大小为 4KB。</p>
+
+<h3>建立内存页表</h3>
+
+<p>这里先从内存的分页机制说起。之前我们已经接触过内存的分段管理机制了，和分段机制一样，分页机制同样是管理内存的一种方式，只不过这种方式相对于分段式来说更为先进，也是目前主流的现代操作系统所使用的内存管理方式。</p>
+
+<p>通过分页将虚拟地址转换为物理地址这项工作是由 MMU(内存管理单元)负责的，以 x86 32 位架构来说它支持两级分页（Pentium Pro下分页可以是三级），这也是由 MMU 决定的。同时 x86 架构支持 4KB、2MB 和 4MB 单位页面大小的分页。当然无论以多少级进行分页，分页机制的原理是相通的，我们就以两级分页来说。</p>
+
+<p>看下图是二级页表分页机制下虚拟地址转换为物理地址的过程，以 32 位系统为例我们知道 32 位系统的内存虚拟地址是 32 位的，这里我们先假设页面大小是 4KB （随后我们再说 4MB 页面的情况）。</p>
+
+<p>在 4KB 页面大小情况下 32 位的虚拟地址被分为三个部分，从高位到低位分别是：10 位的一级页表索引，10 位的二级页表索引，12 位的页内偏移量。</p>
+
+<p><code>cr3</code> 寄存器中保存着一级页表所在的内存物理地址，当给出一个虚拟地址后，根据 <code>cr3</code> 的地址首先找到一级页表在内存上的存放位置。上面我们说到虚拟地址的高 10 位为一级页表的索引，所以 <code>2^10 = 1024</code> 即一级页表一共有 1024 个元素，通过虚拟地址高 10 位的索引我们找到其中一个元素，而这个元素的值指向二级页表在内存中的物理地址。</p>
+
+<p>同理，虚拟地址中紧挨着高 10 位后面的 10 位是二级页表索引，因此二级页表也有 1024 个元素，通过虚拟地址的二级页表索引找到其中的一个元素，该元素指向内存分页中的一个页的地址。</p>
+
+<p>通过二级页表我们现在找到了内存上的一页物理页。根据现在的设定，一物理页的大小是 4KB，4KB 的内存上还是存在着很多不同的数据的，那么我们如何从这段 4KB 内存上取得我们想要的数据呢？别忘了在虚拟地址上还剩下低 12 位没用呢，<code>2^12 = 4096 = 4KB</code> 根据这最后 12 位的索引我们最终在内存上准确的找到了我们想要的数据。</p>
+
+<p>而根据二级页表和每页内存的大小我们也不难算出：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="mi">1024</span><span class="err">个一级页表项</span> <span class="n">x</span> <span class="mi">1024</span><span class="err">个二级页表项</span> <span class="n">x</span> <span class="mi">4</span><span class="n">KB</span><span class="err">页面大小</span> <span class="o">=</span> <span class="mi">4</span><span class="n">GB</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>正好是 32 位系统的最大内存寻址。</p>
+
+<p>我们再通过下面这张示意图体会一下这个过程。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="err">寄存器</span>                       <span class="err">虚拟地址</span>
+</span><span class='line'><span class="o">+---+</span>        <span class="o">+---------------------------------------+</span>
+</span><span class='line'><span class="o">|</span><span class="n">cr3</span><span class="o">|</span>        <span class="o">|</span>  <span class="n">Page</span> <span class="n">Dict</span>  <span class="o">|</span>  <span class="n">Page</span> <span class="n">Table</span>  <span class="o">|</span>  <span class="n">Offset</span>  <span class="o">|</span>
+</span><span class='line'><span class="o">+---+</span>        <span class="o">|</span>  <span class="mi">31</span> <span class="o">--</span> <span class="mi">22</span>   <span class="o">|</span>  <span class="mi">21</span> <span class="o">--</span> <span class="mi">12</span>    <span class="o">|</span>  <span class="mi">11</span> <span class="o">--</span> <span class="mi">0</span> <span class="o">|</span>
+</span><span class='line'>  <span class="o">|</span>          <span class="o">+---------------------------------------+</span>
+</span><span class='line'><span class="n">__</span><span class="o">/</span>                   <span class="o">|</span>                   <span class="o">|</span>       <span class="o">|-----------|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">+--------+</span>         <span class="o">|</span>      <span class="o">+--------+</span>   <span class="o">|</span>    <span class="o">+--------+</span>     <span class="o">|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>         <span class="o">|</span>      <span class="o">|</span>        <span class="o">|</span>   <span class="o">|</span>    <span class="o">|</span>        <span class="o">|</span>     <span class="o">|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">+--------+</span>         <span class="o">|</span>      <span class="o">+--------+&lt;--|</span>    <span class="o">+--------+</span>     <span class="o">|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>         <span class="o">|</span>      <span class="o">|</span>        <span class="o">|-----|</span>  <span class="o">|</span>        <span class="o">|</span>     <span class="o">|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">+--------+&lt;--------|</span>      <span class="o">+--------+</span>     <span class="o">|</span>  <span class="o">+--------+</span>     <span class="o">|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">|</span>  <span class="n">PDE</span>   <span class="o">|----|</span>           <span class="o">|</span>   <span class="n">PTE</span>  <span class="o">|</span>     <span class="o">|</span>  <span class="o">|</span>  <span class="n">Data</span>  <span class="o">|</span>     <span class="o">|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">+--------+</span>    <span class="o">|</span>           <span class="o">+--------+</span>     <span class="o">|</span>  <span class="o">+--------+&lt;----|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>    <span class="o">|</span>           <span class="o">|</span>        <span class="o">|</span>     <span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">+--------+</span>    <span class="o">|</span>           <span class="o">+--------+</span>     <span class="o">|</span>  <span class="o">+--------+</span>
+</span><span class='line'><span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>    <span class="o">|</span>           <span class="o">|</span>        <span class="o">|</span>     <span class="o">|</span>  <span class="o">|</span>        <span class="o">|</span>
+</span><span class='line'><span class="o">|-&gt;+--------+</span>    <span class="o">|----------&gt;+--------+</span>     <span class="o">|-&gt;+--------+</span>
+</span><span class='line'>     <span class="err">一级页表</span>                    <span class="err">二级页表</span>          <span class="err">物理内存页</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里我们再额外算一笔账，二级页表中每个表项占 32 位，所以一个一级页表的总体积是 <code>4byte x 1024 = 4KB</code>，而每个一级页表项都对应一个二级页表，所以全部二级页表的总体积是 <code>4KB x 1024 = 4MB</code>，即二级页表分页机制自身内存占用也要约 4MB 外加 4KB。</p>
+
+<p>我们还要额外提一下页表项。上面刚说过每个页表项占 32 位，它也是分两个部分：高 20 位是基地址，低 12 位是控制标记位。所以当我们通过一级页表索引在一级页表中查找时是这样的：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="err">一级页表项地址</span> <span class="o">=</span> <span class="n">cr3</span><span class="err">寄存器高</span><span class="mi">20</span><span class="err">位</span> <span class="o">+</span> <span class="p">(</span> <span class="mi">10</span><span class="err">位一级页表索引</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>通过二级页表索引在二级页表中查找时是这样的：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="err">二级页表项地址</span> <span class="o">=</span> <span class="err">一级页表项高</span><span class="mi">20</span><span class="err">位</span> <span class="o">+</span> <span class="p">(</span> <span class="mi">10</span><span class="err">位二级页表索引</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>读到这里你是否可以理解 <code>页表项索引左移 2 位</code> 这个操作的意义？索引就好比数组的下标，而这里我们要通过下标得到具体的位置，如果一条笔直的马路上每隔 2 米就插一面旗子，我现在站在这条路的起点处（20位基地址）问你第 5 面旗子（下标索引）距离我多远（地址），那么你一定会算：<code>5 x 2 = 10 米</code>，那么同理：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="err">页表项地址</span> <span class="o">=</span> <span class="err">基地址</span> <span class="o">+</span> <span class="p">(</span> <span class="err">索引</span> <span class="n">x</span> <span class="err">页表项大小</span> <span class="p">)</span>
+</span><span class='line'>           <span class="o">=</span> <span class="err">基地址</span> <span class="o">+</span> <span class="p">(</span> <span class="err">索引</span> <span class="n">x</span> <span class="mi">4</span><span class="err">字节</span> <span class="p">)</span>
+</span><span class='line'>           <span class="o">=</span> <span class="err">基地址</span> <span class="o">+</span> <span class="p">(</span> <span class="err">索引</span> <span class="o">&lt;&lt;</span> <span class="mi">2</span> <span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最后我们再看看页表项低 12 位控制位都代表什么意义</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="o">+</span> <span class="mi">11</span> <span class="o">+</span> <span class="mi">10</span> <span class="o">+</span> <span class="mi">9</span> <span class="o">+</span> <span class="mi">8</span> <span class="o">+</span>  <span class="mi">7</span> <span class="o">+</span> <span class="mi">6</span> <span class="o">+</span> <span class="mi">5</span> <span class="o">+</span>  <span class="mi">4</span>  <span class="o">+</span>  <span class="mi">3</span>  <span class="o">+</span> <span class="mi">2</span>  <span class="o">+</span> <span class="mi">1</span>  <span class="o">+</span> <span class="mi">0</span> <span class="o">+</span>
+</span><span class='line'><span class="o">|</span>    <span class="n">Avail</span>    <span class="o">|</span> <span class="n">G</span> <span class="o">|</span> <span class="n">PS</span> <span class="o">|</span> <span class="n">D</span> <span class="o">|</span> <span class="n">A</span> <span class="o">|</span> <span class="n">PCD</span> <span class="o">|</span> <span class="n">PWT</span> <span class="o">|</span> <span class="n">US</span> <span class="o">|</span> <span class="n">RW</span> <span class="o">|</span> <span class="n">P</span> <span class="o">|</span>
+</span><span class='line'><span class="o">+--------------------------------------------------------+</span>
+</span><span class='line'><span class="o">|</span>     <span class="mo">000</span>     <span class="o">|</span> <span class="mi">0</span> <span class="o">|</span>  <span class="mi">1</span> <span class="o">|</span> <span class="mi">0</span> <span class="o">|</span> <span class="mi">0</span> <span class="o">|</span>  <span class="mi">0</span>  <span class="o">|</span>  <span class="mi">0</span>  <span class="o">|</span>  <span class="mi">0</span> <span class="o">|</span>  <span class="mi">1</span> <span class="o">|</span> <span class="mi">1</span> <span class="o">|</span>
+</span><span class='line'><span class="o">+--------------------------------------------------------+</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">P</span>     <span class="o">:</span> <span class="mi">0</span> <span class="err">表示此页不在物理内存中，</span><span class="mi">1</span> <span class="err">表示此页在物理内存中</span>
+</span><span class='line'><span class="n">RW</span>    <span class="o">:</span> <span class="mi">0</span> <span class="err">表示只读，</span><span class="mi">1</span> <span class="err">表示可读可写（要配合</span> <span class="n">US</span> <span class="err">位）</span>
+</span><span class='line'><span class="n">US</span>    <span class="o">:</span> <span class="mi">0</span> <span class="err">表示特权级页面，</span><span class="mi">1</span> <span class="err">表示普通权限页面</span>
+</span><span class='line'><span class="n">PWT</span>   <span class="o">:</span> <span class="mi">1</span> <span class="err">表示写这个页面时直接写入内存，</span><span class="mi">0</span> <span class="err">表示先写到缓存中</span>
+</span><span class='line'><span class="n">PCD</span>   <span class="o">:</span> <span class="mi">1</span> <span class="err">表示该页禁用缓存机制，</span><span class="mi">0</span> <span class="err">表示启用缓存</span>
+</span><span class='line'><span class="n">A</span>     <span class="o">:</span> <span class="err">当该页被初始化时为</span> <span class="mi">0</span><span class="err">，一但进行过读</span><span class="o">/</span><span class="err">写则置为</span> <span class="mi">1</span>
+</span><span class='line'><span class="n">D</span>     <span class="o">:</span> <span class="err">脏页标记（这里就不做具体介绍了）</span>
+</span><span class='line'><span class="n">PS</span>    <span class="o">:</span> <span class="mi">0</span> <span class="err">表示页面大小为</span> <span class="mi">4</span><span class="n">KB</span><span class="err">，</span><span class="mi">1</span> <span class="err">表示页面大小为</span> <span class="mi">4</span><span class="n">MB</span>
+</span><span class='line'><span class="n">G</span>     <span class="o">:</span> <span class="mi">1</span> <span class="err">表示页面为共享页面（这里就不做具体介绍了）</span>
+</span><span class='line'><span class="n">Avail</span> <span class="o">:</span> <span class="mi">3</span> <span class="err">位保留位</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后我们再说回 xv6。</p>
+
+<p>到目前为止我们知道 xv6 开启了 4MB 内存页大小，在 x86 架构下当通过 <code>cr4</code> 控制寄存器的 <code>PSE</code> 位打开了 4MB 分页后 MMU 内存管理单元的分页机制就会从二级分页简化位一级分页。</p>
+
+<p>即虚拟地址的高 10 位仍然是一级页表项索引，但是后面的 22 位则全部变为页内偏移量（因为一页有 <code>2^22 = 4MB</code> 大小了嘛）。</p>
+
+<p>我们来看看这个一级页表的结构</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="cp"># Set page directory</span>
+</span><span class='line'>  <span class="n">movl</span>    <span class="err">$</span><span class="p">(</span><span class="n">V2P_WO</span><span class="p">(</span><span class="n">entrypgdir</span><span class="p">)),</span> <span class="o">%</span><span class="n">eax</span>
+</span><span class='line'>  <span class="n">movl</span>    <span class="o">%</span><span class="n">eax</span><span class="p">,</span> <span class="o">%</span><span class="n">cr3</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>通过代码我们知道页表地址是存在一个叫做 <code>entrypgdir</code> 的变量中了，通过文本搜索可以在 <code>main.c</code> 文件的最后找到这个变量，我们看一下</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Boot page table used in entry.S and entryother.S.</span>
+</span><span class='line'><span class="c1">// Page directories (and page tables), must start on a page boundary,</span>
+</span><span class='line'><span class="c1">// hence the &quot;__aligned__&quot; attribute.  </span>
+</span><span class='line'><span class="c1">// Use PTE_PS in page directory entry to enable 4Mbyte pages.</span>
+</span><span class='line'><span class="n">__attribute__</span><span class="p">((</span><span class="n">__aligned__</span><span class="p">(</span><span class="n">PGSIZE</span><span class="p">)))</span>
+</span><span class='line'><span class="n">pde_t</span> <span class="n">entrypgdir</span><span class="p">[</span><span class="n">NPDENTRIES</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// Map VA&#39;s [0, 4MB) to PA&#39;s [0, 4MB)</span>
+</span><span class='line'>  <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="n">PTE_P</span> <span class="o">|</span> <span class="n">PTE_W</span> <span class="o">|</span> <span class="n">PTE_PS</span><span class="p">,</span>
+</span><span class='line'>  <span class="c1">// Map VA&#39;s [KERNBASE, KERNBASE+4MB) to PA&#39;s [0, 4MB)</span>
+</span><span class='line'>  <span class="p">[</span><span class="n">KERNBASE</span><span class="o">&gt;&gt;</span><span class="n">PDXSHIFT</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="n">PTE_P</span> <span class="o">|</span> <span class="n">PTE_W</span> <span class="o">|</span> <span class="n">PTE_PS</span><span class="p">,</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">//PAGEBREAK!</span>
+</span><span class='line'><span class="c1">// Blank page.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>将这些宏定义都转义过来我们看看这个页表的样子</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="kt">unsigned</span> <span class="kt">int</span> <span class="n">entrypgdir</span><span class="p">[</span><span class="mi">1024</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="o">|</span> <span class="mh">0x001</span> <span class="o">|</span> <span class="mh">0x002</span> <span class="o">|</span> <span class="mh">0x080</span><span class="p">,</span>  <span class="c1">// 0x083 = 0000 1000 0011</span>
+</span><span class='line'>    <span class="p">[</span><span class="mh">0x80000000</span> <span class="o">&gt;&gt;</span> <span class="mi">22</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span> <span class="o">|</span> <span class="mh">0x001</span> <span class="o">|</span> <span class="mh">0x002</span> <span class="o">|</span> <span class="mh">0x080</span>  <span class="c1">// 0x083</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可见这个页表非常简单，只有两个页表项 <code>0x00000000</code> 和 <code>0x80000000</code>，而且两个页表项索引的内存物理地址都是 <code>0 ~ 4MB</code>，其他页表项全部未作设置。而且通过这两个页表项的值也可以清楚的看出这段基地址为 0 的 4MB 大小的内存页还是特级权限内存页（低 12 位的控制位对应关系已经附在上面解释控制位的示意图里了）。</p>
+
+<p>不难想象这么简单的页表肯定不是 xv6 最终使用的页表。这里可以先剧透一下，这确实只是一个临时页表，它只保证内核在即将打开内存分页支持后内核可以正常执行接下来的代码，而内核在紧接着执行 <code>main</code> 方法时会马上再次重新分配新的页表，而且最终的页表是 4KB 单位页面的精细页表哦~</p>
+
+<h3>开启内存分页机制</h3>
+
+<p>我们在上上篇<a href="http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">《【学习xv6】从实模式到保护模式》</a>讲到如何打开保护模式时其实就已经介绍过开启分页机制的方法了：将 <code>cr0</code> 寄存器的第 31 位置为 1。</p>
+
+<p>这里还要在提一句，至此我们开启了内存分页机制，接下来内核的代码执行和数据读写都要经过 MMU 通过分页机制对内核指令地址和数据地址的转换，那么目前的页表是如何保证在转换后的物理地址是正确的，如何保证内核可以继续正常运行的呢？</p>
+
+<p>我们来分析一下。</p>
+
+<p>根据 <code>kernel.ld</code> 链接器脚本的设定，内核的虚拟地址起始于 <code>0x80100000</code> 即内核代码段的起始处，而内核的代码段被放置在内存物理地址 <code>0x100000</code> 处。我们刚刚看到目前的临时页表将虚拟地址 <code>0x80000000</code> 映射到物理内存的 <code>0x0</code> 处，所以我们来尝试用刚刚了解到的内存分页机制来解析一下 <code>0x80100000</code> 虚拟地址最后转换成物理地址是多少。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="mh">0x80100000</span> <span class="o">=</span> <span class="mi">1000</span> <span class="mo">0000</span> <span class="mo">00</span><span class="o">|</span><span class="mo">01</span> <span class="mo">0000</span> <span class="mo">0000</span> <span class="mo">0000</span> <span class="mo">0000</span> <span class="mo">0000</span>
+</span><span class='line'>
+</span><span class='line'><span class="mh">0x80100000</span> <span class="err">高</span> <span class="mi">10</span> <span class="err">位</span> <span class="o">=</span> <span class="mi">1000</span> <span class="mo">0000</span> <span class="mo">00</span> <span class="o">=</span> <span class="mi">512</span>
+</span><span class='line'>
+</span><span class='line'><span class="mh">0x80100000</span> <span class="err">后</span> <span class="mi">22</span> <span class="err">位</span> <span class="o">=</span> <span class="mo">01</span> <span class="mo">0000</span> <span class="mo">0000</span> <span class="mo">0000</span> <span class="mo">0000</span> <span class="mo">0000</span> <span class="o">=</span> <span class="mi">1048576</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">索引</span> <span class="mi">512</span> <span class="err">对应</span>  <span class="n">entrypgdir</span><span class="p">[</span> <span class="mh">0x80000000</span> <span class="o">&gt;&gt;</span> <span class="mi">22</span> <span class="p">]</span> <span class="err">即基地址为</span> <span class="mh">0x0</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">换算的物理地址</span> <span class="o">=</span> <span class="mi">0</span> <span class="o">+</span> <span class="mi">1048576</span> <span class="o">=</span> <span class="mi">1048576</span> <span class="o">=</span> <span class="mh">0x100000</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">即内核代码段所在内存物理地址</span> <span class="mh">0x100000</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>说白了就是通过页表将内核高端的虚拟地址直接映射到内核真实所在的低端物理内存位置。</p>
+
+<p>这样虽然保证了在分页机制开启的情况下内核也可以正常运行，但也限制了内核最多只能使用 4MB 的内存，不过对于现在的内核来说 4MB 足够了。</p>
+
+<h3>设置内核栈顶位置并跳转到 main 执行</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'>  <span class="err">#</span> <span class="n">Set</span> <span class="n">up</span> <span class="n">the</span> <span class="n">stack</span> <span class="n">pointer</span><span class="p">.</span>
+</span><span class='line'>  <span class="n">movl</span> <span class="err">$</span><span class="p">(</span><span class="n">stack</span> <span class="o">+</span> <span class="n">KSTACKSIZE</span><span class="p">),</span> <span class="o">%</span><span class="n">esp</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="err">#</span> <span class="n">Jump</span> <span class="n">to</span> <span class="n">main</span><span class="p">(),</span> <span class="n">and</span> <span class="k">switch</span> <span class="n">to</span> <span class="n">executing</span> <span class="n">at</span>
+</span><span class='line'>  <span class="err">#</span> <span class="n">high</span> <span class="n">addresses</span><span class="p">.</span> <span class="n">The</span> <span class="n">indirect</span> <span class="n">call</span> <span class="n">is</span> <span class="n">needed</span> <span class="n">because</span>
+</span><span class='line'>  <span class="err">#</span> <span class="n">the</span> <span class="n">assembler</span> <span class="n">produces</span> <span class="n">a</span> <span class="n">PC</span><span class="o">-</span><span class="n">relative</span> <span class="n">instruction</span>
+</span><span class='line'>  <span class="err">#</span> <span class="k">for</span> <span class="n">a</span> <span class="n">direct</span> <span class="n">jump</span><span class="p">.</span>
+</span><span class='line'>  <span class="n">mov</span> <span class="err">$</span><span class="n">main</span><span class="p">,</span> <span class="o">%</span><span class="n">eax</span>
+</span><span class='line'>  <span class="n">jmp</span> <span class="o">*%</span><span class="n">eax</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="n">comm</span> <span class="n">stack</span><span class="p">,</span> <span class="n">KSTACKSIZE</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里通过 <code>.comm</code> 在内核 bbs 段开辟了一段 <code>KSTACKSIZE = 4096 = 4KB</code> 大小的内核栈并将栈顶设置为这段数据区域的末尾处（栈是自上而下的嘛），最后通过 <code>jmp</code> 语句跳转到 <code>main</code> 方法处继续执行。</p>
+
+<p>看到 <code>main</code> 这个单词玩过 C 语言的会觉得亲切吧。没错，我们即将踏入 C 语言的天地了。顺带提一句，看过这篇之后你应该能想明白为什么 <code>main</code> 函数会是 C 语言编写的程序的入口（链接器脚本），可不可以用别的函数做 C 语言编写程序的入口呢？（可以，通过链接器脚本）。</p>
+
+<h2>内核运行</h2>
+
+<p>我们来到 <code>main.c</code> 文件的 <code>main</code> 函数处，这里很干净的调用了一连串的方法。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='c'><span class='line'><span class="c1">// Bootstrap processor starts running C code here.</span>
+</span><span class='line'><span class="c1">// Allocate a real stack and switch to it, first</span>
+</span><span class='line'><span class="c1">// doing some setup required for memory allocator to work.</span>
+</span><span class='line'><span class="kt">int</span>
+</span><span class='line'><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">kinit1</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">P2V</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span><span class="p">));</span> <span class="c1">// phys page allocator</span>
+</span><span class='line'>  <span class="n">kvmalloc</span><span class="p">();</span>      <span class="c1">// kernel page table</span>
+</span><span class='line'>  <span class="n">mpinit</span><span class="p">();</span>        <span class="c1">// collect info about this machine</span>
+</span><span class='line'>  <span class="n">lapicinit</span><span class="p">();</span>
+</span><span class='line'>  <span class="n">seginit</span><span class="p">();</span>       <span class="c1">// set up segments</span>
+</span><span class='line'>  <span class="n">cprintf</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">cpu%d: starting xv6</span><span class="se">\n\n</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">cpu</span><span class="o">-&gt;</span><span class="n">id</span><span class="p">);</span>
+</span><span class='line'>  <span class="n">picinit</span><span class="p">();</span>       <span class="c1">// interrupt controller</span>
+</span><span class='line'>  <span class="n">ioapicinit</span><span class="p">();</span>    <span class="c1">// another interrupt controller</span>
+</span><span class='line'>  <span class="n">consoleinit</span><span class="p">();</span>   <span class="c1">// I/O devices &amp; their interrupts</span>
+</span><span class='line'>  <span class="n">uartinit</span><span class="p">();</span>      <span class="c1">// serial port</span>
+</span><span class='line'>  <span class="n">pinit</span><span class="p">();</span>         <span class="c1">// process table</span>
+</span><span class='line'>  <span class="n">tvinit</span><span class="p">();</span>        <span class="c1">// trap vectors</span>
+</span><span class='line'>  <span class="n">binit</span><span class="p">();</span>         <span class="c1">// buffer cache</span>
+</span><span class='line'>  <span class="n">fileinit</span><span class="p">();</span>      <span class="c1">// file table</span>
+</span><span class='line'>  <span class="n">iinit</span><span class="p">();</span>         <span class="c1">// inode cache</span>
+</span><span class='line'>  <span class="n">ideinit</span><span class="p">();</span>       <span class="c1">// disk</span>
+</span><span class='line'>  <span class="k">if</span><span class="p">(</span><span class="o">!</span><span class="n">ismp</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">timerinit</span><span class="p">();</span>   <span class="c1">// uniprocessor timer</span>
+</span><span class='line'>  <span class="n">startothers</span><span class="p">();</span>   <span class="c1">// start other processors</span>
+</span><span class='line'>  <span class="n">kinit2</span><span class="p">(</span><span class="n">P2V</span><span class="p">(</span><span class="mi">4</span><span class="o">*</span><span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span><span class="p">),</span> <span class="n">P2V</span><span class="p">(</span><span class="n">PHYSTOP</span><span class="p">));</span> <span class="c1">// must come after startothers()</span>
+</span><span class='line'>  <span class="n">userinit</span><span class="p">();</span>      <span class="c1">// first user process</span>
+</span><span class='line'>  <span class="c1">// Finish setting up this processor in mpmain.</span>
+</span><span class='line'>  <span class="n">mpmain</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>至此我们已经了解一台 PC 从加电启动开始如何从实模式到保护模式、内存寻址如何从分段式到分页式，启动方式如何从 BIOS 到引导区程序再从引导区程序加载内核到内存中运行。</p>
+
+<p>即便写了这么多，内核这位“神秘的少女”也只是刚刚走到我们面前，我们还未揭开这位“神秘的少女”的面纱去窥探她美丽的容貌。不过我们距离这一刻已经非常非常的近了，接下来我们将会看到 xv6 的内核是如何实现内存管理、进程管理、IO 操作等现代化操作系统所应该实现的诸多特性。</p>
+
+<p>让我们继续加油！</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-11-11T16:28:13+08:00" pubdate data-updated="true">2015年11月11日</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/cao-zuo-xi-tong/'>操作系统</a>
+
+
+</div>
+	
+	<div class="comments"><a href="#disqus_thread">Comments</a></div>
+	
+	<div>
+		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
+		<form action="https://shenghuo.alipay.com/send/payment/fill.htm" method="post" target="_blank" accept-charset="GBK" id="alipayForm">
+			<input name="optEmail" type="hidden" value="leenjewel@gmail.com" />
+			<input name="payAmount" type="hidden" value="1.00" />
+			<input id="title" name="title" type="hidden" value="捐赠给 leenjewel.github.io" />
+			<input name="memo" type="hidden" value="文章写的不错，我来捐赠鼓励的！" />
+			<input name="pay" type="image" src="https://img.alipay.com/sys/personalprod/style/mc/btn-index.png" width="150" height="40">
+		</form>
+	</div>
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		
+		
+	</div>
+	
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2015
+
+    leenjewel
+
+[ TP:1AA81E42 ]</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'leenjewelgithubio';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://leenjewel.github.io/blog/2015/11/11/%5B%28xue-xi-xv6%29%5D-nei-he-gai-lan/';
+        var disqus_url = 'http://leenjewel.github.io/blog/2015/11/11/%5B%28xue-xi-xv6%29%5D-nei-he-gai-lan/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//go.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-52061917-1']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- leenjewel.github.io -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-7743616000257723"
+     data-ad-slot="4032598696"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</body>
+</html>

@@ -1,0 +1,554 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Android 平台用 gprof 给 Cocos2d-x 做性能分析 - leenjewel Blog</title>
+	<meta name="author" content="leenjewel">
+
+	
+	<meta name="description" content="gprof 在 iOS 平台下我们可以用 Xcode 自带的 Profile 工具来测试我们程序的性能，那在 Android 平台下面要怎么搞呢？答案就是gprof。什么是 gprof 呢？引用 Wiki 的解释： Gprof is a performance analysis tool for &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="leenjewel Blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	
+</head>
+
+
+<body>
+	<header id="header" class="inner"><nav id="title-nav">
+<h1><a href="/">leenjewel Blog</a></h1>
+
+<h2>Anything about code.</h2>
+
+</nav>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:leenjewel.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+		<a class="github" href="https://github.com/leenjewel" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:leenjewel.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Android 平台用 Gprof 给 Cocos2d-x 做性能分析</h2>
+	<div class="entry-content"><h3>gprof</h3>
+
+<p>在 iOS 平台下我们可以用 Xcode 自带的 Profile 工具来测试我们程序的性能，那在 Android 平台下面要怎么搞呢？答案就是<code>gprof</code>。什么是 gprof 呢？引用 <a href="http://en.wikipedia.org/wiki/Gprof">Wiki</a> 的解释：</p>
+
+<blockquote><p>Gprof is a performance analysis tool for Unix applications. It uses a hybrid of instrumentation and sampling[1] and was created as extended version of the older &ldquo;prof&rdquo; tool. Unlike prof, gprof is capable of limited call graph collecting and printing.</p></blockquote>
+
+<p>因为 Android 本来就是基于 Linux 的，所以这里用 gprof 来做性能测试是没什么问题的。不过需要注意的是，这里所说的性能测试是针对 NDK 编译的 C++ 代码的。就想 Cocos2d-x 这样的 C++ 实现的游戏引擎就可以通过 gprof 来分析。下面我们来说说搞法。</p>
+
+<h3>环境</h3>
+
+<p>我是 Mac OS X 下，这里要做性能分析的 Cocos2d-x 项目是基于 Cocos2d-x 3.2 引擎，项目本身是基于 Lua 脚本编写的。其实这些都无关紧要，只不过是编译出的 so 文件有所不同罢了。只要是 NDK 的代码都可以用 gprof 来做性能分析的。</p>
+
+<h3>android-ndk-profiler</h3>
+
+<p>要想生成 gprof 的性能分析报告，我们优先要把一个叫做 <code>android-ndk-profiler</code> 的模块集成到我们的项目中。android-ndk-profiler 模块的源代码在 <a href="https://github.com/richq/android-ndk-profiler">GitHub</a> 上面，首先要把模块代码 clone 下来</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>git clone git@github.com:richq/android-ndk-profiler.git</span></code></pre></td></tr></table></div></figure>
+
+
+<p>android-ndk-profiler 的项目自带了一篇<a href="https://github.com/richq/android-ndk-profiler/blob/master/docs/Usage.md">文档说明</a>教授如何集成和使用，但是写的比较简单，我来详细的说一下。android-ndk-profiler 项目 clone 下来后进到项目目录可以看到如下结构</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'> |-docs
+</span><span class='line'> |-example
+</span><span class='line'> |-jni
+</span><span class='line'> |-test</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p> 而我们需要的就是<code>jni</code>这个目录下面的文件。</p>
+
+<h3>集成 android-ndk-profiler 到 Cocos2d-x 项目</h3>
+
+<h6>拷贝文件</h6>
+
+<p>来到我们自己的 Cocos2d-x 项目目录中，新建一个叫做 <code>android-ndk-profiler</code> 的文件夹，将刚刚克隆的 android-ndk-profile 模块的 jni 目录中的所有文件拷贝到我们刚刚建立的文件夹中。</p>
+
+<h6>编辑 Android.mk 文件</h6>
+
+<p>打开 <code>proj.android/jin/Android.mk</code> 文件，加入如下代码：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>#*注意* YOUR_ANDROID_NDK_PROFILER_PATH 是你 cocos2d-x 项目中 android-ndk-profiler 目录的位置
+</span><span class='line'>
+</span><span class='line'>$(call import-add-path,$(YOUR_ANDROID_NDK_PROFILER_PATH))
+</span><span class='line'>
+</span><span class='line'># 加入头文件
+</span><span class='line'>LOCAL_C_INCLUDES += $(YOUR_ANDROID_NDK_PROFILER_PATH)
+</span><span class='line'>
+</span><span class='line'>APP_DEBUG := $(strip $(NDK_DEBUG))
+</span><span class='line'>
+</span><span class='line'># 如果是 Debug 模式，则引入 android-ndk-profiler
+</span><span class='line'>ifeq ($(APP_DEBUG),1)
+</span><span class='line'>  LOCAL_CFLAGS := -pg
+</span><span class='line'>  LOCAL_STATIC_LIBRARIES += android-ndk-profiler
+</span><span class='line'>endif
+</span><span class='line'>
+</span><span class='line'>ifeq ($(APP_DEBUG),1)
+</span><span class='line'>  $(call import-module,YOUR_ANDROID_NDK_PROFILER_PATH)
+</span><span class='line'>endif</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里只解释两点。</p>
+
+<p><code>LOCAL_CFLAGS := -pg</code> 通过在编译使用 -pg 编译和链接选项，gcc 在你应用程序的每个函数中都加入了一个名为mcount ( or  “_mcount”  , or  “__mcount” , 依赖于编译器或操作系统) 的函数，也就是说你的应用程序里的每一个函数都会调用 mcount, 而 mcount 会在内存中保存一张函数调用图，并通过函数调用堆栈的形式查找子函数和父函数的地址。这张调用图也保存了所有与函数相关的调用时间，调用次数等等的所有信息。</p>
+
+<p><code>APP_DEBUG</code> 这里增加了一个判断，只有当以 <code>NDK_DEBUG=1</code> 的 Debug 模式编译 NDK 代码的时候才开启 android-ndk-profiler 分析功能，这样保证我们出 Release 版本的时候不引入性能分析。</p>
+
+<h3>使用 android-ndk-profiler</h3>
+
+<p>以 Debug 模式重新编译一下项目代码：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>cd proj.android
+</span><span class='line'>ndk-build NDK_DEBUG=1</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果编译成功那么说明 android-ndk-profiler 已经成功集成到我们的 Cocos2d-x 项目中了，集成的过程非常简单，同样，android-ndk-profiler 的使用也非常的方便。</p>
+
+<h6>编辑 AppDelegate.cpp 文件</h6>
+
+<p>只需要引入一个头文件，添加两个函数调用即可</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="c1">// 引入头文件</span>
+</span><span class='line'><span class="cp">#if (COCOS2D_DEBUG&gt;0 &amp;&amp; CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)</span>
+</span><span class='line'><span class="cp">#include &quot;prof.h&quot;</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">bool</span> <span class="n">AppDelegate</span><span class="o">::</span><span class="n">applicationDidFinishLaunching</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="cp">#if (COCOS2D_DEBUG&gt;0 &amp;&amp; CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)</span>
+</span><span class='line'>  <span class="n">monstartup</span><span class="p">(</span><span class="s">&quot;libcocos2dlua.so&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'>  <span class="c1">// 其他已有逻辑代码......</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">void</span> <span class="n">AppDelegate</span><span class="o">::</span><span class="n">applicationDidEnterBackground</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="c1">// 其他已有逻辑代码......</span>
+</span><span class='line'><span class="cp">#if (COCOS2D_DEBUG&gt;0 &amp;&amp; CC_TARGET_PLATFORM == CC_PLATFORM_ANDROID)</span>
+</span><span class='line'>    <span class="n">moncleanup</span><span class="p">();</span>
+</span><span class='line'><span class="cp">#endif</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里只需要注意两点。</p>
+
+<p><code>AndroidManifest.xml</code> 因为要生成性能分析报告，所以要赋予你的 Android 程序 WRITE_EXTERNAL_STORAGE 权限，即</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.WRITE_EXTERNAL_STORAGE&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>libcocos2dlua.so</code> 这个 so 文件会根据你的 Cocos2d-x 项目的类型不同名字上会有所不同，比如我们是 Lua 项目，所以 NDK 编译生成的 so 文件就叫 libcocos2dlua.so ，具体的文件名请自行到 proj.android/libs/armeabi 目录下查看。</p>
+
+<p>再次以 Debug 模式重新编译一下项目代码，如果没有错误，那么大功就告成了。</p>
+
+<h6>生成 gmon.out 性能分析报告</h6>
+
+<p>项目编译完成后生成 apk 文件，将 apk 文件安装到 Android 设备上。通过上一小节我们对 AppDelegate.cpp 文件的修改不难看出，当程序在 Android 设备上运行的时候，调用了 <code>monstartup</code> 函数开始性能分析，当程序退到后台时调用了 <code>moncleanup</code> 函数生成性能分析报告。性能分析报告文件默认存储到 Android 设备的 /sdcard/gmon.out 位置，我们用 adb 工具可以把文件拉到电脑上面。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>adb pull /sdcard/gmon.out .
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当然官方文档里面也提了，如果想要自定义性能分析报告存放的位置，可以在调用 <code>moncleanup</code> 函数前指定要保存的位置。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">setenv</span><span class="p">(</span><span class="s">&quot;CPUPROFILE&quot;</span><span class="p">,</span> <span class="s">&quot;/data/data/com.example.application/files/gmon.out&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">);</span>
+</span><span class='line'><span class="n">moncleanup</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>解读性能分析报告 gmon.out</h3>
+
+<p>生成的性能分析告报 gmon.out 是不能直接通过文本编辑器打开来读的，它是个二进制文件，需要专门的工具来生成可读的文本文件。这个工具在 NDK 中已经提供了，以我使用的 android-ndk-r10d 为例：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">cd</span> <span class="n">android</span><span class="o">-</span><span class="n">ndk</span><span class="o">-</span><span class="n">r10d</span><span class="o">/</span><span class="n">toolchains</span><span class="o">/</span><span class="n">arm</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">androideabi</span><span class="o">-</span><span class="mf">4.9</span><span class="o">/</span><span class="n">prebuilt</span><span class="o">/</span><span class="n">darwin</span><span class="o">-</span><span class="n">x86_64</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">.</span><span class="o">/</span><span class="n">arm</span><span class="o">-</span><span class="n">linux</span><span class="o">-</span><span class="n">androideabi</span><span class="o">-</span><span class="n">gprof</span> \
+</span><span class='line'>  <span class="err">你的项目路径</span><span class="o">/</span><span class="n">proj</span><span class="p">.</span><span class="n">android</span><span class="o">/</span><span class="n">obj</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">armeabi</span><span class="o">/</span><span class="n">libcocos2dlua</span><span class="p">.</span><span class="n">so</span>\
+</span><span class='line'>  <span class="err">你的</span><span class="n">gmon</span><span class="p">.</span><span class="n">out</span><span class="err">存放路径</span><span class="o">/</span><span class="n">gmon</span><span class="p">.</span><span class="n">out</span> <span class="o">&gt;</span> <span class="n">gmon</span><span class="p">.</span><span class="n">txt</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里只解释一点。</p>
+
+<p><code>libcocos2dlua.so</code> 细心的读者发现这里使用的 so 文件并不是之前的那个放在 proj.android/libs/armeabi/libcocos2dlua.so 下面的那个 so 文件。这是因为最终随 apk 一起打包的那个 libcocos2dlua.so 文件（也就是 proj.android/libs/armeabi 目录下的）是不包含<strong>符号表</strong>的，而存放在 proj.android/obj/local/armeabi 目录下的是带<strong>符号表</strong>的版本。而什么是<strong>符号表</strong>，这是一个编译链接中的概念，请自行 Google 一下，或者读一读<a href="http://book.douban.com/subject/3652388/">《程序员的自我修养》这本书</a>，再次强烈推荐这本书。</p>
+
+<h3>gmon.txt 解读</h3>
+
+<p>我节选一下生成的 gmon.txt 的两处比较重要的部分来看</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">Flat</span> <span class="nl">profile:</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Each</span> <span class="n">sample</span> <span class="n">counts</span> <span class="n">as</span> <span class="mf">0.01</span> <span class="n">seconds</span><span class="p">.</span>
+</span><span class='line'>  <span class="o">%</span>   <span class="n">cumulative</span>   <span class="n">self</span>              <span class="n">self</span>     <span class="n">total</span>
+</span><span class='line'> <span class="n">time</span>   <span class="n">seconds</span>   <span class="n">seconds</span>    <span class="n">calls</span>  <span class="n">ms</span><span class="o">/</span><span class="n">call</span>  <span class="n">ms</span><span class="o">/</span><span class="n">call</span>  <span class="n">name</span>
+</span><span class='line'> <span class="mf">19.14</span>      <span class="mf">1.16</span>     <span class="mf">1.16</span>                             <span class="n">png_read_filter_row_paeth_multibyte_pixel</span>
+</span><span class='line'> <span class="mf">15.35</span>      <span class="mf">2.09</span>     <span class="mf">0.93</span>                             <span class="n">cocos2d</span><span class="o">::</span><span class="n">Image</span><span class="o">::</span><span class="n">premultipliedAlpha</span><span class="p">()</span>
+</span><span class='line'> <span class="mf">14.36</span>      <span class="mf">2.96</span>     <span class="mf">0.87</span>                             <span class="n">cocos2d</span><span class="o">::</span><span class="n">Texture2D</span><span class="o">::</span><span class="n">convertRGBA8888ToRGBA4444</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="k">const</span><span class="o">*</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span><span class="p">)</span>
+</span><span class='line'>  <span class="mf">7.10</span>      <span class="mf">3.39</span>     <span class="mf">0.43</span>                             <span class="n">profCount</span>
+</span><span class='line'>  <span class="mf">3.96</span>      <span class="mf">3.63</span>     <span class="mf">0.24</span>                             <span class="n">png_read_filter_row_up</span>
+</span><span class='line'>  <span class="mf">3.30</span>      <span class="mf">3.83</span>     <span class="mf">0.20</span>                             <span class="n">llex</span>
+</span><span class='line'>  <span class="mf">3.14</span>      <span class="mf">4.02</span>     <span class="mf">0.19</span>                             <span class="n">png_read_filter_row_sub</span>
+</span><span class='line'>  <span class="mf">2.81</span>      <span class="mf">4.19</span>     <span class="mf">0.17</span>                             <span class="n">__gnu_mcount_nc</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">......</span>
+</span><span class='line'>
+</span><span class='line'>  
+</span><span class='line'>           <span class="n">Call</span> <span class="n">graph</span> <span class="p">(</span><span class="n">explanation</span> <span class="n">follows</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nl">granularity:</span> <span class="n">each</span> <span class="n">sample</span> <span class="n">hit</span> <span class="n">covers</span> <span class="mi">2</span> <span class="n">byte</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="mf">0.17</span><span class="o">%</span> <span class="n">of</span> <span class="mf">5.99</span> <span class="n">seconds</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">index</span> <span class="o">%</span> <span class="n">time</span>    <span class="n">self</span>  <span class="n">children</span>    <span class="n">called</span>     <span class="n">name</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">1</span><span class="p">]</span>     <span class="mf">19.4</span>    <span class="mf">1.16</span>    <span class="mf">0.00</span>                 <span class="n">png_read_filter_row_paeth_multibyte_pixel</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">2</span><span class="p">]</span>     <span class="mf">15.5</span>    <span class="mf">0.93</span>    <span class="mf">0.00</span>                 <span class="n">cocos2d</span><span class="o">::</span><span class="n">Image</span><span class="o">::</span><span class="n">premultipliedAlpha</span><span class="p">()</span> <span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">3</span><span class="p">]</span>     <span class="mf">14.5</span>    <span class="mf">0.87</span>    <span class="mf">0.00</span>                 <span class="n">cocos2d</span><span class="o">::</span><span class="n">Texture2D</span><span class="o">::</span><span class="n">convertRGBA8888ToRGBA4444</span><span class="p">(</span><span class="kt">unsigned</span> <span class="kt">char</span> <span class="k">const</span><span class="o">*</span><span class="p">,</span> <span class="kt">int</span><span class="p">,</span> <span class="kt">unsigned</span> <span class="kt">char</span><span class="o">*</span><span class="p">)</span> <span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">4</span><span class="p">]</span>      <span class="mf">7.2</span>    <span class="mf">0.43</span>    <span class="mf">0.00</span>                 <span class="n">profCount</span> <span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span><span class='line'>                                                 <span class="o">&lt;</span><span class="n">spontaneous</span><span class="o">&gt;</span>
+</span><span class='line'><span class="p">[</span><span class="mi">5</span><span class="p">]</span>      <span class="mf">4.0</span>    <span class="mf">0.24</span>    <span class="mf">0.00</span>                 <span class="n">png_read_filter_row_up</span> <span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+</span><span class='line'><span class="o">-----------------------------------------------</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>简单解释一下含义</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='cpp'><span class='line'><span class="n">Flat</span> <span class="nl">profile:</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Each</span> <span class="n">sample</span> <span class="n">counts</span> <span class="n">as</span> <span class="mf">0.01</span> <span class="n">seconds</span><span class="p">.</span>
+</span><span class='line'>  <span class="o">%</span>   <span class="n">cumulative</span>   <span class="n">self</span>              <span class="n">self</span>     <span class="n">total</span>
+</span><span class='line'> <span class="n">time</span>   <span class="n">seconds</span>   <span class="n">seconds</span>    <span class="n">calls</span>  <span class="n">ms</span><span class="o">/</span><span class="n">call</span>  <span class="n">ms</span><span class="o">/</span><span class="n">call</span>  <span class="n">name</span>
+</span><span class='line'> <span class="err">函数</span>     <span class="err">程序</span>       <span class="err">函数</span>       <span class="err">函数</span>    <span class="err">函数</span>     <span class="err">函数</span>      <span class="err">函数名</span>
+</span><span class='line'> <span class="err">消耗</span>     <span class="err">累计</span>       <span class="err">本身</span>       <span class="err">调用</span>    <span class="err">平均</span>     <span class="err">平均</span>
+</span><span class='line'> <span class="err">时间</span>     <span class="err">执行</span>       <span class="err">执行</span>       <span class="err">次数</span>    <span class="err">执行</span>     <span class="err">执行</span>
+</span><span class='line'> <span class="err">占程</span>     <span class="err">时间</span>       <span class="err">时间</span>              <span class="err">时间</span>     <span class="err">时间</span>
+</span><span class='line'> <span class="err">序运</span>                                 <span class="p">(</span><span class="err">不</span>      <span class="p">(</span><span class="err">包</span>
+</span><span class='line'> <span class="err">行时</span>                                  <span class="err">包</span>       <span class="err">括</span>
+</span><span class='line'> <span class="err">间的</span>                                  <span class="err">括</span>       <span class="err">被</span>
+</span><span class='line'> <span class="err">百分</span>                                  <span class="err">被</span>       <span class="err">调</span>
+</span><span class='line'> <span class="err">比</span>                                    <span class="err">调</span>       <span class="err">用</span>
+</span><span class='line'>                                      <span class="err">用</span>       <span class="err">时</span>
+</span><span class='line'>                                      <span class="err">时</span>       <span class="err">间</span><span class="p">)</span>
+</span><span class='line'>                                      <span class="err">间</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>           <span class="n">Call</span> <span class="n">graph</span> <span class="p">(</span><span class="n">explanation</span> <span class="n">follows</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nl">granularity:</span> <span class="n">each</span> <span class="n">sample</span> <span class="n">hit</span> <span class="n">covers</span> <span class="mi">2</span> <span class="n">byte</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="mf">0.17</span><span class="o">%</span> <span class="n">of</span> <span class="mf">5.99</span> <span class="n">seconds</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">index</span> <span class="o">%</span> <span class="n">time</span>    <span class="n">self</span>  <span class="n">children</span>    <span class="n">called</span>     <span class="n">name</span>
+</span><span class='line'> <span class="err">索引</span>    <span class="err">函数</span>     <span class="err">函数</span>   <span class="err">函数的</span>       <span class="err">被调用</span>      <span class="err">函数名</span>
+</span><span class='line'> <span class="err">值</span>      <span class="err">执行</span>     <span class="err">本身</span>   <span class="err">子函数</span>        <span class="err">次数</span>
+</span><span class='line'>        <span class="err">时间</span>     <span class="err">执行</span>    <span class="err">执行</span>
+</span><span class='line'>        <span class="err">占程</span>     <span class="err">时间</span>    <span class="err">时间</span>
+</span><span class='line'>        <span class="err">序运</span>
+</span><span class='line'>        <span class="err">行时</span>
+</span><span class='line'>        <span class="err">间百</span>
+</span><span class='line'>        <span class="err">分比</span>
+</span><span class='line'>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-17T11:27:52+08:00" pubdate data-updated="true">2015年4月17日</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/cocos2d-x-android/'>Cocos2d-x Android</a>
+
+
+</div>
+	
+	<div class="comments"><a href="#disqus_thread">Comments</a></div>
+	
+	<div>
+		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
+		<form action="https://shenghuo.alipay.com/send/payment/fill.htm" method="post" target="_blank" accept-charset="GBK" id="alipayForm">
+			<input name="optEmail" type="hidden" value="leenjewel@gmail.com" />
+			<input name="payAmount" type="hidden" value="1.00" />
+			<input id="title" name="title" type="hidden" value="捐赠给 leenjewel.github.io" />
+			<input name="memo" type="hidden" value="文章写的不错，我来捐赠鼓励的！" />
+			<input name="pay" type="image" src="https://img.alipay.com/sys/personalprod/style/mc/btn-index.png" width="150" height="40">
+		</form>
+	</div>
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		
+		
+	</div>
+	
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2015
+
+    leenjewel
+
+[ TP:1AA81E42 ]</footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'leenjewelgithubio';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://leenjewel.github.io/blog/2015/04/17/android-ping-tai-yong-gprof-gei-cocos2d-x-zuo-xing-neng-fen-xi/';
+        var disqus_url = 'http://leenjewel.github.io/blog/2015/04/17/android-ping-tai-yong-gprof-gei-cocos2d-x-zuo-xing-neng-fen-xi/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//go.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-52061917-1']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- leenjewel.github.io -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-7743616000257723"
+     data-ad-slot="4032598696"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</body>
+</html>

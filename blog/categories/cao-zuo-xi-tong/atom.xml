@@ -4,7 +4,7 @@
   <title><![CDATA[Category: 操作系统 | leenjewel Blog]]></title>
   <link href="http://leenjewel.github.io/blog/categories/cao-zuo-xi-tong/atom.xml" rel="self"/>
   <link href="http://leenjewel.github.io/"/>
-  <updated>2015-01-22T21:41:55+08:00</updated>
+  <updated>2015-11-12T22:58:12+08:00</updated>
   <id>http://leenjewel.github.io/</id>
   <author>
     <name><![CDATA[leenjewel]]></name>
@@ -12,6 +12,1432 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[【学习Xv6】 内核概览]]></title>
+    <link href="http://leenjewel.github.io/blog/2015/11/11/%5B%28xue-xi-xv6%29%5D-nei-he-gai-lan/"/>
+    <updated>2015-11-11T16:28:13+08:00</updated>
+    <id>http://leenjewel.github.io/blog/2015/11/11/[(xue-xi-xv6)]-nei-he-gai-lan</id>
+    <content type="html"><![CDATA[<h2>前情提要</h2>
+
+<p>上一篇<a href="http://leenjewel.github.io/blog/2015/05/26/%5B%28xue-xi-xv6%29%5D-jia-zai-bing-yun-xing-nei-he/">《【学习Xv6】加载并运行内核》</a>讲到内核已经成功加载到内存中开始运行了。内核可以说是一个操作系统最核心的部件了，所以涉及要讲的内容非常非常多，我们先缓一缓脚步，对内核有一个大致的了解然后在细细的去品味它。</p>
+
+<h2>内核的组成</h2>
+
+<p>要想知道内核里都有些什么还是要从 <code>Makefile</code> 入手看看组成内核都使用了那些源码文件。</p>
+
+<p>```
+kernel: $(OBJS) entry.o entryother initcode kernel.ld</p>
+
+<pre><code>$(LD) $(LDFLAGS) -T kernel.ld -o kernel entry.o $(OBJS) -b binary initcode entryother
+$(OBJDUMP) -S kernel &gt; kernel.asm
+$(OBJDUMP) -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' &gt; kernel.sym
+</code></pre>
+
+<p>```</p>
+
+<p>而 <code>$(OBJS)</code> 变量由于内容较多我们只列出其中的一部分</p>
+
+<p>```
+OBJS = \</p>
+
+<pre><code>bio.o\
+console.o\
+exec.o\
+file.o\
+fs.o\
+ide.o\
+ioapic.o\
+kalloc.o\
+......
+</code></pre>
+
+<p>```</p>
+
+<p>从这些 <code>.o</code> 文件的文件名不难看出这些都是内核基本功能的组成部分，这也是我们以后研究的重点，既然这篇是概览我们暂时先不去关心这些组件。</p>
+
+<p>除去组件剩下的文件就只有这几个：<code>entry.S</code>、<code>initcode.S</code> 和 <code>entryother.S</code> 而这几个文件我们要从哪一个先入手呢？这要听 <code>kernel.ld</code> 文件的，因为链接器在链接生成最终的内核时也是听 <code>kernel.ld</code> 文件的安排的。</p>
+
+<p><code>.ld</code> 文件是链接器配置文件或者叫链接脚本，它有自己的一套语法，链接器最终会根据链接器配置文件中的规则来生成最终的二进制文件。这里我们就不做具体的语法介绍了，有兴趣的同学请自行 Google 吧，我们只解释一下几个关键点</p>
+
+<p>```
+/<em> Simple linker script for the JOS kernel.
+   See the GNU ld &lsquo;info&rsquo; manual (&ldquo;info ld&rdquo;) to learn the syntax. </em>/</p>
+
+<p>OUTPUT_FORMAT(&ldquo;elf32-i386&rdquo;, &ldquo;elf32-i386&rdquo;, &ldquo;elf32-i386&rdquo;)
+OUTPUT_ARCH(i386)
+ENTRY(_start)</p>
+
+<p>SECTIONS
+{</p>
+
+<pre><code>/* Link the kernel at this address: "." means the current address */
+    /* Must be equal to KERNLINK */
+. = 0x80100000;
+
+.text : AT(0x100000) {
+    *(.text .stub .text.* .gnu.linkonce.t.*)
+}
+
+    /* Adjust the address for the data segment to the next page */
+. = ALIGN(0x1000);
+
+// ......
+</code></pre>
+
+<p>}
+```</p>
+
+<p>这里只关注四点：</p>
+
+<ul>
+<li><code>ENTRY(_start)</code> 　内核的代码为段执行入口：_start</li>
+<li><code>. = 0x80100000</code> 内核的起始虚拟地址位置为：0x80100000</li>
+<li><code>.text : AT(0x100000)</code> 内核代码段的内存装载地址为：0x100000</li>
+<li><code>. = ALIGN(0x1000)</code> 内核代码段保证 4KB 对齐</li>
+</ul>
+
+
+<p>关于内核起始虚拟地址的问题我们后面遇到了再来说，代码段内存装载地址 <code>0x100000</code> 是不是看着眼熟？没错了，我们在上一篇<a href="http://leenjewel.github.io/blog/2015/05/26/%5B%28xue-xi-xv6%29%5D-jia-zai-bing-yun-xing-nei-he/">《【学习Xv6】加载并运行内核》</a>最后讲到 <code>bootmain.c</code> 文件加载并运行内核时看到过，这里再把上一篇的代码列出来大家回顾一下：</p>
+
+<p>```c
+// bootmain.c</p>
+
+<p>void
+bootmain(void)
+{
+  struct elfhdr <em>elf;
+  struct proghdr </em>ph, <em>eph;
+  void (</em>entry)(void);
+  uchar* pa;</p>
+
+<p>  // 从 0xa0000 到 0xfffff 的物理地址范围属于设备空间，
+  // 所以内核放置在 0x10000 处开始
+  elf = (struct elfhdr*)0x10000;</p>
+
+<p>  // 从内核所在硬盘位置读取一内存页 4kb 数据
+  readseg((uchar*)elf, 4096, 0);</p>
+
+<p>  // 省略后面的代码&hellip;&hellip;
+}
+```</p>
+
+<p>正式因为链接脚本强制规定了内核代码段在内存中的位置才保证了引导区程序可以顺利的按照约定的地址去引导 CPU 执行内核代码。</p>
+
+<h2>内核引导</h2>
+
+<p>既然知道了内核的入口点是 <code>_start</code> 通过简单的文本搜索不难找到这个入口点在 <code>entry.S</code> 文件中，我们直接先列出代码：</p>
+
+<p>```</p>
+
+<h1>include &ldquo;asm.h&rdquo;</h1>
+
+<h1>include &ldquo;memlayout.h&rdquo;</h1>
+
+<h1>include &ldquo;mmu.h&rdquo;</h1>
+
+<h1>include &ldquo;param.h&rdquo;</h1>
+
+<h1>Multiboot header.  Data to direct multiboot loader.</h1>
+
+<p>.p2align 2
+.text
+.globl multiboot_header
+multiboot_header:
+  #define magic 0x1badb002
+  #define flags 0
+  .long magic
+  .long flags
+  .long (-magic-flags)</p>
+
+<h1>By convention, the _start symbol specifies the ELF entry point.</h1>
+
+<h1>Since we haven&rsquo;t set up virtual memory yet, our entry point is</h1>
+
+<h1>the physical address of &lsquo;entry&rsquo;.</h1>
+
+<p>.globl <em>start
+</em>start = V2P_WO(entry)</p>
+
+<h1>Entering xv6 on boot processor, with paging off.</h1>
+
+<p>.globl entry
+entry:
+  # Turn on page size extension for 4Mbyte pages
+  movl    %cr4, %eax
+  orl     $(CR4_PSE), %eax
+  movl    %eax, %cr4
+  # Set page directory
+  movl    $(V2P_WO(entrypgdir)), %eax
+  movl    %eax, %cr3
+  # Turn on paging.
+  movl    %cr0, %eax
+  orl     $(CR0_PG|CR0_WP), %eax
+  movl    %eax, %cr0</p>
+
+<p>  # Set up the stack pointer.
+  movl $(stack + KSTACKSIZE), %esp</p>
+
+<p>  # Jump to main(), and switch to executing at
+  # high addresses. The indirect call is needed because
+  # the assembler produces a PC-relative instruction
+  # for a direct jump.
+  mov $main, %eax
+  jmp *%eax</p>
+
+<p>.comm stack, KSTACKSIZE
+```</p>
+
+<p>这里我们直接略去 <code>multiboot_header</code> 这部分。这部分是为了方便通过 <a href="https://zh.wikipedia.org/zh/GNU_GRUB">GNU GRUB</a> 来引导 xv6 系统的。我们直接看 <code>.globl _start</code> 部分，入口只做了一件事儿就是转到 <code>entry</code> 段继续执行。不过别看这里只有一行代码，我们也要说一下。</p>
+
+<p><code>V2P_WO</code> 的定义在 <code>memlayout.h</code> 文件中：</p>
+
+<p>```</p>
+
+<h1>define KERNBASE 0x80000000         // First kernel virtual address</h1>
+
+<h1>define V2P_WO(x) ((x) &ndash; KERNBASE)</h1>
+
+<p>```</p>
+
+<p>它的作用是将内存虚拟地址转换成物理地址。我们现在知道内核的虚拟地址起始于 <code>0x80100000</code> 而对应的内存物理地址是 <code>0x100000</code> ，因为代码的偏移量是一样的即：</p>
+
+<p>```
+指令虚拟地址 = 0x80100000 + 偏移量
+指令内存地址 = 0x100000 + 偏移量</p>
+
+<p>所以运用初中解方程式的知识</p>
+
+<p>执行内存地址 = 0x100000 + 指令虚拟地址 &ndash; 0x80100000</p>
+
+<pre><code>         = 指令虚拟地址 - 0x80000000
+</code></pre>
+
+<p>```</p>
+
+<p>接下来我们继续看 <code>entry</code> 段做了什么。总结来说一共做了五件事儿：</p>
+
+<ul>
+<li>1、开启 4MB 内存页支持</li>
+<li>2、建立内存页表</li>
+<li>3、开启内存分页机制</li>
+<li>4、设置内核栈顶位置</li>
+<li>5、跳转到 <code>main</code> 继续执行</li>
+</ul>
+
+
+<p>我们一件一件的说。</p>
+
+<h3>开启 4MB 内存分页支持</h3>
+
+<p>这是通过设置寄存器 <code>cr4</code> 的 <code>PSE</code> 位来完成的。<code>cr4</code> 寄存器是个 32 位的寄存器目前只用到低 21 位，每一位的至位都控制这一些功能的状态，所以 <code>cr4</code> 寄存器又叫做控制寄存器。</p>
+
+<p><code>PSE</code> 位是 <code>cr4</code> 控制寄存器的第 5 位，当该位置为 1 时表示内存页大小为 4MB，当置为 0 时表示内存页大小为 4KB。</p>
+
+<h3>建立内存页表</h3>
+
+<p>这里先从内存的分页机制说起。之前我们已经接触过内存的分段管理机制了，和分段机制一样，分页机制同样是管理内存的一种方式，只不过这种方式相对于分段式来说更为先进，也是目前主流的现代操作系统所使用的内存管理方式。</p>
+
+<p>通过分页将虚拟地址转换为物理地址这项工作是由 MMU(内存管理单元)负责的，以 x86 32 位架构来说它支持两级分页（Pentium Pro下分页可以是三级），这也是由 MMU 决定的。同时 x86 架构支持 4KB、2MB 和 4MB 单位页面大小的分页。当然无论以多少级进行分页，分页机制的原理是相通的，我们就以两级分页来说。</p>
+
+<p>看下图是二级页表分页机制下虚拟地址转换为物理地址的过程，以 32 位系统为例我们知道 32 位系统的内存虚拟地址是 32 位的，这里我们先假设页面大小是 4KB （随后我们再说 4MB 页面的情况）。</p>
+
+<p>在 4KB 页面大小情况下 32 位的虚拟地址被分为三个部分，从高位到低位分别是：10 位的一级页表索引，10 位的二级页表索引，12 位的页内偏移量。</p>
+
+<p><code>cr3</code> 寄存器中保存着一级页表所在的内存物理地址，当给出一个虚拟地址后，根据 <code>cr3</code> 的地址首先找到一级页表在内存上的存放位置。上面我们说到虚拟地址的高 10 位为一级页表的索引，所以 <code>2^10 = 1024</code> 即一级页表一共有 1024 个元素，通过虚拟地址高 10 位的索引我们找到其中一个元素，而这个元素的值指向二级页表在内存中的物理地址。</p>
+
+<p>同理，虚拟地址中紧挨着高 10 位后面的 10 位是二级页表索引，因此二级页表也有 1024 个元素，通过虚拟地址的二级页表索引找到其中的一个元素，该元素指向内存分页中的一个页的地址。</p>
+
+<p>通过二级页表我们现在找到了内存上的一页物理页。根据现在的设定，一物理页的大小是 4KB，4KB 的内存上还是存在着很多不同的数据的，那么我们如何从这段 4KB 内存上取得我们想要的数据呢？别忘了在虚拟地址上还剩下低 12 位没用呢，<code>2^12 = 4096 = 4KB</code> 根据这最后 12 位的索引我们最终在内存上准确的找到了我们想要的数据。</p>
+
+<p>而根据二级页表和每页内存的大小我们也不难算出：</p>
+
+<p><code>
+1024个一级页表项 x 1024个二级页表项 x 4KB页面大小 = 4GB
+</code></p>
+
+<p>正好是 32 位系统的最大内存寻址。</p>
+
+<p>我们再通过下面这张示意图体会一下这个过程。</p>
+
+<p>```
+寄存器                       虚拟地址
++&mdash;&ndash;+        +&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+
+|cr3|        |  Page Dict  |  Page Table  |  Offset  |
++&mdash;&ndash;+        |  31 &mdash; 22   |  21 &mdash; 12    |  11 &mdash; 0 |
+  |          +&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+
+__/                   |                   |       |&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;|
+|  +&mdash;&mdash;&mdash;&mdash;+         |      +&mdash;&mdash;&mdash;&mdash;+   |    +&mdash;&mdash;&mdash;&mdash;+     |
+|  |        |         |      |        |   |    |        |     |
+|  +&mdash;&mdash;&mdash;&mdash;+         |      +&mdash;&mdash;&mdash;&mdash;+&lt;&mdash;|    +&mdash;&mdash;&mdash;&mdash;+     |
+|  |        |         |      |        |&mdash;&mdash;&ndash;|  |        |     |
+|  +&mdash;&mdash;&mdash;&mdash;+&lt;&mdash;&mdash;&mdash;&mdash;|      +&mdash;&mdash;&mdash;&mdash;+     |  +&mdash;&mdash;&mdash;&mdash;+     |
+|  |  PDE   |&mdash;&mdash;|           |   PTE  |     |  |  Data  |     |
+|  +&mdash;&mdash;&mdash;&mdash;+    |           +&mdash;&mdash;&mdash;&mdash;+     |  +&mdash;&mdash;&mdash;&mdash;+&lt;&mdash;&mdash;|
+|  |        |    |           |        |     |  |        |
+|  +&mdash;&mdash;&mdash;&mdash;+    |           +&mdash;&mdash;&mdash;&mdash;+     |  +&mdash;&mdash;&mdash;&mdash;+
+|  |        |    |           |        |     |  |        |
+|&ndash;>+&mdash;&mdash;&mdash;&mdash;+    |&mdash;&mdash;&mdash;&mdash;&mdash;>+&mdash;&mdash;&mdash;&mdash;+     |&ndash;>+&mdash;&mdash;&mdash;&mdash;+</p>
+
+<pre><code> 一级页表                    二级页表          物理内存页
+</code></pre>
+
+<p>```</p>
+
+<p>这里我们再额外算一笔账，二级页表中每个表项占 32 位，所以一个一级页表的总体积是 <code>4byte x 1024 = 4KB</code>，而每个一级页表项都对应一个二级页表，所以全部二级页表的总体积是 <code>4KB x 1024 = 4MB</code>，即二级页表分页机制自身内存占用也要约 4MB 外加 4KB。</p>
+
+<p>我们还要额外提一下页表项。上面刚说过每个页表项占 32 位，它也是分两个部分：高 20 位是基地址，低 12 位是控制标记位。所以当我们通过一级页表索引在一级页表中查找时是这样的：</p>
+
+<p><code>
+一级页表项地址 = cr3寄存器高20位 + ( 10位一级页表索引 &lt;&lt; 2 )
+</code></p>
+
+<p>通过二级页表索引在二级页表中查找时是这样的：</p>
+
+<p><code>
+二级页表项地址 = 一级页表项高20位 + ( 10位二级页表索引 &lt;&lt; 2 )
+</code></p>
+
+<p>读到这里你是否可以理解 <code>页表项索引左移 2 位</code> 这个操作的意义？索引就好比数组的下标，而这里我们要通过下标得到具体的位置，如果一条笔直的马路上每隔 2 米就插一面旗子，我现在站在这条路的起点处（20位基地址）问你第 5 面旗子（下标索引）距离我多远（地址），那么你一定会算：<code>5 x 2 = 10 米</code>，那么同理：</p>
+
+<p>```
+页表项地址 = 基地址 + ( 索引 x 页表项大小 )</p>
+
+<pre><code>       = 基地址 + ( 索引 x 4字节 )
+       = 基地址 + ( 索引 &lt;&lt; 2 )
+</code></pre>
+
+<p>```</p>
+
+<p>最后我们再看看页表项低 12 位控制位都代表什么意义</p>
+
+<p>```
++ 11 + 10 + 9 + 8 +  7 + 6 + 5 +  4  +  3  + 2  + 1  + 0 +
+|    Avail    | G | PS | D | A | PCD | PWT | US | RW | P |
++&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+
+|     000     | 0 |  1 | 0 | 0 |  0  |  0  |  0 |  1 | 1 |
++&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;+</p>
+
+<p>P     : 0 表示此页不在物理内存中，1 表示此页在物理内存中
+RW    : 0 表示只读，1 表示可读可写（要配合 US 位）
+US    : 0 表示特权级页面，1 表示普通权限页面
+PWT   : 1 表示写这个页面时直接写入内存，0 表示先写到缓存中
+PCD   : 1 表示该页禁用缓存机制，0 表示启用缓存
+A     : 当该页被初始化时为 0，一但进行过读/写则置为 1
+D     : 脏页标记（这里就不做具体介绍了）
+PS    : 0 表示页面大小为 4KB，1 表示页面大小为 4MB
+G     : 1 表示页面为共享页面（这里就不做具体介绍了）
+Avail : 3 位保留位
+```</p>
+
+<p>然后我们再说回 xv6。</p>
+
+<p>到目前为止我们知道 xv6 开启了 4MB 内存页大小，在 x86 架构下当通过 <code>cr4</code> 控制寄存器的 <code>PSE</code> 位打开了 4MB 分页后 MMU 内存管理单元的分页机制就会从二级分页简化位一级分页。</p>
+
+<p>即虚拟地址的高 10 位仍然是一级页表项索引，但是后面的 22 位则全部变为页内偏移量（因为一页有 <code>2^22 = 4MB</code> 大小了嘛）。</p>
+
+<p>我们来看看这个一级页表的结构</p>
+
+<p>```</p>
+
+<h1>Set page directory</h1>
+
+<p>  movl    $(V2P_WO(entrypgdir)), %eax
+  movl    %eax, %cr3
+```</p>
+
+<p>通过代码我们知道页表地址是存在一个叫做 <code>entrypgdir</code> 的变量中了，通过文本搜索可以在 <code>main.c</code> 文件的最后找到这个变量，我们看一下</p>
+
+<p>```
+// Boot page table used in entry.S and entryother.S.
+// Page directories (and page tables), must start on a page boundary,
+// hence the &ldquo;<strong>aligned</strong>&rdquo; attribute.<br/>
+// Use PTE_PS in page directory entry to enable 4Mbyte pages.
+<strong>attribute</strong>((<strong>aligned</strong>(PGSIZE)))
+pde_t entrypgdir[NPDENTRIES] = {
+  // Map VA&rsquo;s [0, 4MB) to PA&rsquo;s [0, 4MB)
+  [0] = (0) | PTE_P | PTE_W | PTE_PS,
+  // Map VA&rsquo;s [KERNBASE, KERNBASE+4MB) to PA&rsquo;s [0, 4MB)
+  [KERNBASE>>PDXSHIFT] = (0) | PTE_P | PTE_W | PTE_PS,
+};</p>
+
+<p>//PAGEBREAK!
+// Blank page.
+```</p>
+
+<p>将这些宏定义都转义过来我们看看这个页表的样子</p>
+
+<p>```c
+unsigned int entrypgdir[1024] = {</p>
+
+<pre><code>[0] = 0 | 0x001 | 0x002 | 0x080,  // 0x083 = 0000 1000 0011
+[0x80000000 &gt;&gt; 22] = 0 | 0x001 | 0x002 | 0x080  // 0x083
+</code></pre>
+
+<p>};
+```</p>
+
+<p>可见这个页表非常简单，只有两个页表项 <code>0x00000000</code> 和 <code>0x80000000</code>，而且两个页表项索引的内存物理地址都是 <code>0 ~ 4MB</code>，其他页表项全部未作设置。而且通过这两个页表项的值也可以清楚的看出这段基地址为 0 的 4MB 大小的内存页还是特级权限内存页（低 12 位的控制位对应关系已经附在上面解释控制位的示意图里了）。</p>
+
+<p>不难想象这么简单的页表肯定不是 xv6 最终使用的页表。这里可以先剧透一下，这确实只是一个临时页表，它只保证内核在即将打开内存分页支持后内核可以正常执行接下来的代码，而内核在紧接着执行 <code>main</code> 方法时会马上再次重新分配新的页表，而且最终的页表是 4KB 单位页面的精细页表哦~</p>
+
+<h3>开启内存分页机制</h3>
+
+<p>我们在上上篇<a href="http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">《【学习xv6】从实模式到保护模式》</a>讲到如何打开保护模式时其实就已经介绍过开启分页机制的方法了：将 <code>cr0</code> 寄存器的第 31 位置为 1。</p>
+
+<p>这里还要在提一句，至此我们开启了内存分页机制，接下来内核的代码执行和数据读写都要经过 MMU 通过分页机制对内核指令地址和数据地址的转换，那么目前的页表是如何保证在转换后的物理地址是正确的，如何保证内核可以继续正常运行的呢？</p>
+
+<p>我们来分析一下。</p>
+
+<p>根据 <code>kernel.ld</code> 链接器脚本的设定，内核的虚拟地址起始于 <code>0x80100000</code> 即内核代码段的起始处，而内核的代码段被放置在内存物理地址 <code>0x100000</code> 处。我们刚刚看到目前的临时页表将虚拟地址 <code>0x80000000</code> 映射到物理内存的 <code>0x0</code> 处，所以我们来尝试用刚刚了解到的内存分页机制来解析一下 <code>0x80100000</code> 虚拟地址最后转换成物理地址是多少。</p>
+
+<p>```
+0x80100000 = 1000 0000 00|01 0000 0000 0000 0000 0000</p>
+
+<p>0x80100000 高 10 位 = 1000 0000 00 = 512</p>
+
+<p>0x80100000 后 22 位 = 01 0000 0000 0000 0000 0000 = 1048576</p>
+
+<p>索引 512 对应  entrypgdir[ 0x80000000 >> 22 ] 即基地址为 0x0</p>
+
+<p>换算的物理地址 = 0 + 1048576 = 1048576 = 0x100000</p>
+
+<p>即内核代码段所在内存物理地址 0x100000
+```</p>
+
+<p>说白了就是通过页表将内核高端的虚拟地址直接映射到内核真实所在的低端物理内存位置。</p>
+
+<p>这样虽然保证了在分页机制开启的情况下内核也可以正常运行，但也限制了内核最多只能使用 4MB 的内存，不过对于现在的内核来说 4MB 足够了。</p>
+
+<h3>设置内核栈顶位置并跳转到 main 执行</h3>
+
+<p>```
+  # Set up the stack pointer.
+  movl $(stack + KSTACKSIZE), %esp</p>
+
+<p>  # Jump to main(), and switch to executing at
+  # high addresses. The indirect call is needed because
+  # the assembler produces a PC-relative instruction
+  # for a direct jump.
+  mov $main, %eax
+  jmp *%eax</p>
+
+<p>.comm stack, KSTACKSIZE
+```</p>
+
+<p>这里通过 <code>.comm</code> 在内核 bbs 段开辟了一段 <code>KSTACKSIZE = 4096 = 4KB</code> 大小的内核栈并将栈顶设置为这段数据区域的末尾处（栈是自上而下的嘛），最后通过 <code>jmp</code> 语句跳转到 <code>main</code> 方法处继续执行。</p>
+
+<p>看到 <code>main</code> 这个单词玩过 C 语言的会觉得亲切吧。没错，我们即将踏入 C 语言的天地了。顺带提一句，看过这篇之后你应该能想明白为什么 <code>main</code> 函数会是 C 语言编写的程序的入口（链接器脚本），可不可以用别的函数做 C 语言编写程序的入口呢？（可以，通过链接器脚本）。</p>
+
+<h2>内核运行</h2>
+
+<p>我们来到 <code>main.c</code> 文件的 <code>main</code> 函数处，这里很干净的调用了一连串的方法。</p>
+
+<p>```c
+// Bootstrap processor starts running C code here.
+// Allocate a real stack and switch to it, first
+// doing some setup required for memory allocator to work.
+int
+main(void)
+{
+  kinit1(end, P2V(4<em>1024</em>1024)); // phys page allocator
+  kvmalloc();      // kernel page table
+  mpinit();        // collect info about this machine
+  lapicinit();
+  seginit();       // set up segments
+  cprintf(&ldquo;\ncpu%d: starting xv6\n\n&rdquo;, cpu->id);
+  picinit();       // interrupt controller
+  ioapicinit();    // another interrupt controller
+  consoleinit();   // I/O devices &amp; their interrupts
+  uartinit();      // serial port
+  pinit();         // process table
+  tvinit();        // trap vectors
+  binit();         // buffer cache
+  fileinit();      // file table
+  iinit();         // inode cache
+  ideinit();       // disk
+  if(!ismp)</p>
+
+<pre><code>timerinit();   // uniprocessor timer
+</code></pre>
+
+<p>  startothers();   // start other processors
+  kinit2(P2V(4<em>1024</em>1024), P2V(PHYSTOP)); // must come after startothers()
+  userinit();      // first user process
+  // Finish setting up this processor in mpmain.
+  mpmain();
+}
+```</p>
+
+<p>至此我们已经了解一台 PC 从加电启动开始如何从实模式到保护模式、内存寻址如何从分段式到分页式，启动方式如何从 BIOS 到引导区程序再从引导区程序加载内核到内存中运行。</p>
+
+<p>即便写了这么多，内核这位“神秘的少女”也只是刚刚走到我们面前，我们还未揭开这位“神秘的少女”的面纱去窥探她美丽的容貌。不过我们距离这一刻已经非常非常的近了，接下来我们将会看到 xv6 的内核是如何实现内存管理、进程管理、IO 操作等现代化操作系统所应该实现的诸多特性。</p>
+
+<p>让我们继续加油！</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[【学习Xv6】加载并运行内核]]></title>
+    <link href="http://leenjewel.github.io/blog/2015/05/26/%5B%28xue-xi-xv6%29%5D-jia-zai-bing-yun-xing-nei-he/"/>
+    <updated>2015-05-26T14:03:28+08:00</updated>
+    <id>http://leenjewel.github.io/blog/2015/05/26/[(xue-xi-xv6)]-jia-zai-bing-yun-xing-nei-he</id>
+    <content type="html"><![CDATA[<h2>前情提要</h2>
+
+<p>学习 xv6 系列的上一篇<a href="http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">《【学习xv6】从实模式到保护模式》</a>讲到我们的系统已经将计算机的 CPU 从实模式切换到保护模式状态下了，接下来我们可以暂时告别晦涩难懂的汇编语言来到 C 语言环境中了，引导的工作快要接近尾声，内核即将被载入运行。</p>
+
+<h2>预备知识</h2>
+
+<h3>从硬盘读取数据</h3>
+
+<p>在<a href="http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">《【学习xv6】从实模式到保护模式》</a>中我们已经讲到了如何通过向 804x 键盘控制器端口发送信号来打开 A20 gate 了，同样道理，我们向硬盘控制器的指定端口发送信号就可以操作硬盘，从硬盘读取或向硬盘写入数据。IDE 标准定义了 8 个寄存器来操作硬盘。PC 体系结构将第一个硬盘控制器映射到端口 1F0-1F7 处，而第二个硬盘控制器则被映射到端口 170-177 处。这几个寄存器的描述如下（以第一个控制器为例）：</p>
+
+<p>```
+1F0        &ndash; 数据寄存器。读写数据都必须通过这个寄存器</p>
+
+<p>1F1        &ndash; 错误寄存器，每一位代表一类错误。全零表示操作成功。</p>
+
+<p>1F2        &ndash; 扇区计数。这里面存放你要操作的扇区数量</p>
+
+<p>1F3        &ndash; 扇区LBA地址的0-7位</p>
+
+<p>1F4        &ndash; 扇区LBA地址的8-15位</p>
+
+<p>1F5        &ndash; 扇区LBA地址的16-23位</p>
+
+<p>1F6 (低4位) &ndash; 扇区LBA地址的24-27位</p>
+
+<p>1F6 (第4位) &ndash; 0表示选择主盘，1表示选择从盘</p>
+
+<p>1F6 (5-7位) &ndash; 必须为1</p>
+
+<p>1F7 (写)    &ndash; 命令寄存器</p>
+
+<p>1F7 (读)    &ndash; 状态寄存器</p>
+
+<pre><code>          bit 7 = 1  控制器忙
+          bit 6 = 1  驱动器就绪
+          bit 5 = 1  设备错误
+          bit 4        N/A
+          bit 3 = 1  扇区缓冲区错误
+          bit 2 = 1  磁盘已被读校验
+          bit 1        N/A
+          bit 0 = 1  上一次命令执行失败
+</code></pre>
+
+<p>```</p>
+
+<p>稍后讲到从硬盘加载内核到内存时我们再通过 xv6 的实际代码来看看硬盘操作的具体实现。</p>
+
+<h3>ELF文件格式</h3>
+
+<p>在<a href="http://en.wikipedia.org/wiki/Executable_and_Linkable_Format"> Wiki 百科上有 ELF 文件格式的详细解释</a>，简单的说 ELF 文件格式是 Linux 下可执行文件的标准格式。就好像 Windows 操作系统里的可执行文件 .exe 一样（当然，Windows 里的可执行文件的标准格式叫 PE 文件格式），Linux 操作系统里的可执行文件也有它自己的格式。只有按照文件标准格式组织好的可执行文件操作系统才知道如何加载运行它。我们并使使用 C 语言按照教科书写出的 HelloWorld 代码在 Linux 环境下最终通过编译器（gcc等）编译出的可以运行的程序就是 ELF 文件格式的。</p>
+
+<p>那么 ELF 文件格式具体的结构是怎样的呢？ 大概是下面这个样子的。</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="center"> ELF 头部 ( ELF Header ) </th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td align="center"> 程序头表 (Program Header Table) </td>
+</tr>
+<tr>
+<td></td>
+<td align="center">.text</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">.rodata</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">&hellip;&hellip;</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">节头表 (Section Header Table)</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>这里我们暂时只关心 ELF 文件结构的前两个部分：ELF 头部和程序头表，xv6 源代码的 elf.h 文件中有其详细的定义，我们来看一下。</p>
+
+<p>```c</p>
+
+<h1>define ELF_MAGIC 0x464C457FU  // &ldquo;\x7FELF&rdquo; in little endian</h1>
+
+<p>// ELF 文件格式的头部
+struct elfhdr {
+  uint magic;       // 4 字节，为 0x464C457FU（大端模式）或 0x7felf（小端模式）</p>
+
+<pre><code>                // 表明该文件是个 ELF 格式文件
+</code></pre>
+
+<p>  uchar elf[12];    // 12 字节，每字节对应意义如下：</p>
+
+<pre><code>                //     0 : 1 = 32 位程序；2 = 64 位程序
+                //     1 : 数据编码方式，0 = 无效；1 = 小端模式；2 = 大端模式
+                //     2 : 只是版本，固定为 0x1
+                //     3 : 目标操作系统架构
+                //     4 : 目标操作系统版本
+                //     5 ~ 11 : 固定为 0
+</code></pre>
+
+<p>  ushort type;      // 2 字节，表明该文件类型，意义如下：</p>
+
+<pre><code>                //     0x0 : 未知目标文件格式
+                //     0x1 : 可重定位文件
+                //     0x2 : 可执行文件
+                //     0x3 : 共享目标文件
+                //     0x4 : 转储文件
+                //     0xff00 : 特定处理器文件
+                //     0xffff : 特定处理器文件
+</code></pre>
+
+<p>  ushort machine;   // 2 字节，表明运行该程序需要的计算机体系架构，</p>
+
+<pre><code>                // 这里我们只需要知道 0x0 为未指定；0x3 为 x86 架构
+</code></pre>
+
+<p>  uint version;     // 4 字节，表示该文件的版本号</p>
+
+<p>  uint entry;       // 4 字节，该文件的入口地址，没有入口（非可执行文件）则为 0</p>
+
+<p>  uint phoff;       // 4 字节，表示该文件的“程序头部表”相对于文件的位置，单位是字节</p>
+
+<p>  uint shoff;       // 4 字节，表示该文件的“节区头部表”相对于文件的位置，单位是字节</p>
+
+<p>  uint flags;       // 4 字节，特定处理器标志</p>
+
+<p>  ushort ehsize;    // 2 字节，ELF文件头部的大小，单位是字节</p>
+
+<p>  ushort phentsize; // 2 字节，表示程序头部表中一个入口的大小，单位是字节</p>
+
+<p>  ushort phnum;     // 2 字节，表示程序头部表的入口个数，</p>
+
+<pre><code>                // phnum * phentsize = 程序头部表大小（单位是字节）
+</code></pre>
+
+<p>  ushort shentsize; // 2 字节，节区头部表入口大小，单位是字节</p>
+
+<p>  ushort shnum;     // 2 字节，节区头部表入口个数，</p>
+
+<pre><code>                // shnum * shentsize = 节区头部表大小（单位是字节）
+</code></pre>
+
+<p>  ushort shstrndx;  // 2 字节，表示字符表相关入口的节区头部表索引
+};</p>
+
+<p>// 程序头表
+struct proghdr {
+  uint type;        // 4 字节， 段类型</p>
+
+<pre><code>                //         1 PT_LOAD : 可载入的段
+                //         2 PT_DYNAMIC : 动态链接信息
+                //         3 PT_INTERP : 指定要作为解释程序调用的以空字符结尾的路径名的位置和大小
+                //         4 PT_NOTE : 指定辅助信息的位置和大小
+                //         5 PT_SHLIB : 保留类型，但具有未指定的语义
+                //         6 PT_PHDR : 指定程序头表在文件及程序内存映像中的位置和大小
+                //         7 PT_TLS : 指定线程局部存储模板
+</code></pre>
+
+<p>  uint off;         // 4 字节， 段的第一个字节在文件中的偏移
+  uint vaddr;       // 4 字节， 段的第一个字节在内存中的虚拟地址
+  uint paddr;       // 4 字节， 段的第一个字节在内存中的物理地址(适用于物理内存定位型的系统)
+  uint filesz;      // 4 字节， 段在文件中的长度
+  uint memsz;       // 4 字节， 段在内存中的长度
+  uint flags;       // 4 字节， 段标志</p>
+
+<pre><code>                //         1 : 可执行
+                //         2 : 可写入
+                //         4 : 可读取
+</code></pre>
+
+<p>  uint align;       // 4 字节， 段在文件及内存中如何对齐
+};
+```</p>
+
+<h3>ELF文件的加载与运行</h3>
+
+<p>既然 ELF 标准文件格式是可执行文件（当然不仅仅用于可执行文件，还可以用于动态链接库文件等）使用的文件格式，那么它一定是可以被加载并运行的。学习 xv6 系列的上一篇<a href="http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">《【学习xv6】从实模式到保护模式》</a>的预备知识中我们讲到</p>
+
+<blockquote><p>程序的组成我们可以简单的理解为：数据加上指令就是程序。</p></blockquote>
+
+<p>我们写好的程序代码经过编译器的编译成为机器码，而机器码根据其自身的作用不同被分为不同的段，其中最主要的就是<strong>代码段</strong>和<strong>数据段</strong>。</p>
+
+<p>而一个可执行程序又是有很多个这样的段组成的，一个可执行程序可以有好几个代码段和好几个数据段和其他不同的段。当一个程序准备运行的时候，操作系统会将程序的这些段载入到内从中，再通知 CPU 程序代码段的位置已经开始执行指令的点即入口点。</p>
+
+<p>既然一个可执行程序有多个代码段、多个数据段和其他段，操作系统在加载这些段的时候为了更好的组织利用内存，希望将一些列作用相同的段放在一起加载（比如多个代码段就可以一并加载），编译器为了方便操作系统加载这些作用相同的段，在编译的时候会刻意将作用相同的段安排在一起。而这些作用相同的段在程序中（ELF文件）中是如何组织的，这些组织信息就被记录在 ELF 文件的程序头表中。</p>
+
+<p>所以一个 ELF 文件格式的可执行程序的加载运行过程是这样的：</p>
+
+<ul>
+<li>通过读取 ELF 头表中的信息了解该可执行程序是否可以运行（版本号，适用的计算机架构等等）</li>
+<li>通过 ELF 头表中的信息找到程序头表</li>
+<li>通过读取 ELF 文件中程序头表的信息了解可执行文件中各个段的位置以及加载方式</li>
+<li>将可执行文件中需要加载的段加载到内存中，并通知 CPU 从指定的入口点开始执行</li>
+</ul>
+
+
+<h2>从 bootmain 开始</h2>
+
+<p>学习 xv6 系列的上一篇<a href="http://leenjewel.github.io/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">《【学习xv6】从实模式到保护模式》</a>的最后我们写到</p>
+
+<blockquote><p>通过这个跳转实际上 CPU 就会跳转到 bootasm.S 文件的 start32 标识符处继续执行了</p></blockquote>
+
+<p>我们打开 bootasm.S 文件看看对应的 start32 位置处的代码做了什么事情。</p>
+
+<p>```
+start32:
+  # Set up the protected-mode data segment registers
+  # 像上面讲 ljmp 时所说的，这时候已经在保护模式下了
+  # 数据段在 GDT 中的下标是 2，所以这里数据段的段选择子是 2 &lt;&lt; 3 = 0000 0000 0001 0000
+  # 这 16 位的段选择子中的前 13 位是 GDT 段表下标，这里前 13 位的值是 2 代表选择了数据段
+  # 这里将 3 个数据段寄存器都赋值成数据段段选择子的值
+  movw    $(SEG_KDATA&lt;&lt;3), %ax    # Our data segment selector  段选择子赋值给 ax 寄存器
+  movw    %ax, %ds                # &ndash;> DS: Data Segment        初始化数据段寄存器
+  movw    %ax, %es                # &ndash;> ES: Extra Segment       初始化扩展段寄存器
+  movw    %ax, %ss                # &ndash;> SS: Stack Segment       初始化堆栈段寄存器
+  movw    $0, %ax                 # Zero segments not ready for use  ax 寄存器清零
+  movw    %ax, %fs                # &ndash;> FS                      辅助寄存器清零
+  movw    %ax, %gs                # &ndash;> GS                      辅助寄存器清零</p>
+
+<p>  # Set up the stack pointer and call into C.
+  movl    $start, %esp
+  call    bootmain
+```</p>
+
+<p>这里在初始化了一些寄存器后直接调用了一个叫做 <code>bootmain</code> 的函数，而这个函数是写在 bootmain.c 文件中的，终于我们暂时告别了汇编来到了 C 的世界了。来看看 bootmain 函数在做什么事情。</p>
+
+<h2>载入内核</h2>
+
+<p>bootmain.c 这个文件很小，代码很少，它其实是引导工作的最后部分（引导的大部分工作都在 bootasm.S 中实现），它负责将内核从硬盘上加载到内存中，然后开始执行内核中的程序。我们来看代码。</p>
+
+<p>```c</p>
+
+<h1>define SECTSIZE  512  // 硬盘扇区大小 512 字节</h1>
+
+<p>void
+bootmain(void)
+{
+  struct elfhdr <em>elf;
+  struct proghdr </em>ph, <em>eph;
+  void (</em>entry)(void);
+  uchar* pa;</p>
+
+<p>  // 从 0xa0000 到 0xfffff 的物理地址范围属于设备空间，
+  // 所以内核放置在 0x10000 处开始
+  elf = (struct elfhdr*)0x10000;  // scratch space</p>
+
+<p>  // 从内核所在硬盘位置读取一内存页 4kb 数据
+  readseg((uchar*)elf, 4096, 0);</p>
+
+<p>  // 判断是否为 ELF 文件格式
+  if(elf->magic != ELF_MAGIC)</p>
+
+<pre><code>return;  // let bootasm.S handle error
+</code></pre>
+
+<p>  // 加载 ELF 文件中的程序段 (ignores ph flags).
+  ph = (struct proghdr<em>)((uchar</em>)elf + elf->phoff);
+  eph = ph + elf->phnum;
+  for(; ph &lt; eph; ph++){</p>
+
+<pre><code>pa = (uchar*)ph-&gt;paddr;
+readseg(pa, ph-&gt;filesz, ph-&gt;off);
+if(ph-&gt;memsz &gt; ph-&gt;filesz)
+  stosb(pa + ph-&gt;filesz, 0, ph-&gt;memsz - ph-&gt;filesz);
+</code></pre>
+
+<p>  }</p>
+
+<p>  // Call the entry point from the ELF header.
+  // Does not return!
+  entry = (void(*)(void))(elf->entry);
+  entry();
+}
+```</p>
+
+<p>这里将内核（一个 ELF 格式文件）从硬盘读取到内存 <code>0x10000</code> 处的关键方法是 <code>readseg(uchar*, uint, uint)</code> 我们再来看看这个函数的具体实现代码</p>
+
+<p>```c
+void
+readseg(uchar<em> pa, uint count, uint offset)  // 0x10000, 4096(0x1000), 0
+{
+  uchar</em> epa;</p>
+
+<p>  epa = pa + count;  // 0x11000</p>
+
+<p>  // 根据扇区大小 512 字节做对齐
+  pa &ndash;= offset % SECTSIZE;</p>
+
+<p>  // bootblock 引导区在第一扇区（下标为 0），内核在第二个扇区（下标为 1）
+  // 这里做 +1 操作是统一略过引导区
+  offset = (offset / SECTSIZE) + 1;</p>
+
+<p>  // If this is too slow, we could read lots of sectors at a time.
+  // We&rsquo;d write more to memory than asked, but it doesn&rsquo;t matter &mdash;
+  // we load in increasing order.
+  // 一次读取一个扇区 512 字节的数据
+  for(; pa &lt; epa; pa += SECTSIZE, offset++)</p>
+
+<pre><code>readsect(pa, offset);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>我们来看看为什么说内核在磁盘的第二扇区，引导区在磁盘的第一扇区。在 xv6 系列文章的第一篇<a href="http://leenjewel.github.io/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/">《【学习 Xv6 】在 Mac OSX 下运行 Xv6》</a>里讲到过</p>
+
+<blockquote><p>编译成功后我们会得到 xv6.img 和 fs.img 两个文件。</p>
+
+<p>在 Hardware 配置页的 Hard disk 里把 xv6.img 载入进去。</p>
+
+<p>在 Advanced 配置页的 Hard disk 2 里把 fs.img 载入进去。</p></blockquote>
+
+<p>由此我们可以猜测内核应该在 xv6.img 这个镜像文件中。下面我们通过 Makefile 来印证这一点，我们看一下 xv6 的 Makefile 文件关于 xv6.img 构建过程的说明</p>
+
+<p>```
+xv6.img: bootblock kernel fs.img</p>
+
+<pre><code>dd if=/dev/zero of=xv6.img count=10000
+dd if=bootblock of=xv6.img conv=notrunc
+dd if=kernel of=xv6.img seek=1 conv=notrunc
+</code></pre>
+
+<p>```</p>
+
+<p>可以看出 xv6.img 是一个由 10000 个扇区组成的（512b x 10000 = 5 MB），而里面包含的只有 <code>bootblock</code> 和 <code>kernel</code> 两个块，通过名字我们不难看出 <code>bootblock</code> 就是引导区，它的大小正好是 512 字节即一个磁盘扇区大小（可以通过文件浏览器看到），所以根据它们写入 xv6.img 的顺序我们证实了猜测，在 xv6 系统中引导区占一个磁盘扇区大小，放置在磁盘的第一扇区，紧随其后的是内核文件（ELF 文件格式）。我们用一个十六进制编辑器打开 kernel 文件看看，可以看到开头的数据内如如下</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="center">magic</th>
+<th align="center">elf[12]</th>
+<th align="center">type</th>
+<th align="center">machine</th>
+<th align="center">version</th>
+<th align="center">entry</th>
+<th align="center">phoff</th>
+<th align="center">shoff</th>
+<th align="center">flags</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td align="center">7F 45 4C 46</td>
+<td align="center">01 01 01 00 00 00 00 00 00 00 00 00</td>
+<td align="center">02 00</td>
+<td align="center">03 00</td>
+<td align="center">01 00 00 00</td>
+<td align="center">0C 00 10 00</td>
+<td align="center">34 00 00 00</td>
+<td align="center">00 F6 01 00</td>
+<td align="center">00 00 00 00|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">ehsize</td>
+<td align="center">phentsize</td>
+<td align="center">phnum</td>
+<td align="center">shentsize</td>
+<td align="center">shnum</td>
+<td align="center">shstrndx</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td align="center">34 00</td>
+<td align="center">20 00</td>
+<td align="center">02 00</td>
+<td align="center">28 00</td>
+<td align="center">12 00</td>
+<td align="center">0F 00</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+
+
+<p>而内核文件的前 4 字节正式 ELF 文件头的模数 <code>ELF_MAGIC 0x464C457F</code> 这也说明了内核文件确实是一个 ELF 格式的文件。如果我们按照 ELF 文件结构重拍上面的机器码会是这样</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="center">字段名称</th>
+<th align="center">大小</th>
+<th align="center">数值</th>
+<th align="center">意义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td align="center">magic</td>
+<td align="center">4字节</td>
+<td align="center">7F 45 4C 46</td>
+<td align="center">ELF 格式文件|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">elf</td>
+<td align="center">12字节</td>
+<td align="center">01 01 01 00 00 00 00 00 00 00 00 00</td>
+<td align="center"> 32 位小端模式，目标操作系统为 System V</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">type</td>
+<td align="center">2字节</td>
+<td align="center">02 00</td>
+<td align="center">可执行文件|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">machine</td>
+<td align="center">2字节</td>
+<td align="center">03 00</td>
+<td align="center">指定计算机体系架构为 x86|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">version</td>
+<td align="center">4字节</td>
+<td align="center">01 00 00 00</td>
+<td align="center">版本号为 1|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">entry</td>
+<td align="center">4字节</td>
+<td align="center">0C 00 10 00</td>
+<td align="center">该可执行文件入口地址|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">phoff</td>
+<td align="center">4字节</td>
+<td align="center">34 00 00 00</td>
+<td align="center">程序头表相对于文件的起始位置是 52 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">shoff</td>
+<td align="center">4字节</td>
+<td align="center">00 F6 01 00</td>
+<td align="center">节区头表相对于文件的起始位置是 128512 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">flags</td>
+<td align="center">4字节</td>
+<td align="center">00 00 00 00</td>
+<td align="center">无特定处理器标志|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">ehsize</td>
+<td align="center">2字节</td>
+<td align="center">34 00</td>
+<td align="center">ELF 头大小为 52 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">phentsize</td>
+<td align="center">2字节</td>
+<td align="center">20 00</td>
+<td align="center">程序头表一个入口的大小是 32 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">phnum</td>
+<td align="center">2字节</td>
+<td align="center">02 00</td>
+<td align="center">程序头表入口个数是 2 个|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">shentsize</td>
+<td align="center">2字节</td>
+<td align="center">28 00</td>
+<td align="center">节区头表入口大小是 40 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">shnum</td>
+<td align="center">2字节</td>
+<td align="center">12 00</td>
+<td align="center">节区头表入口个数是 18 个|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">shstrndx</td>
+<td align="center">2字节</td>
+<td align="center">0F 00</td>
+<td align="center">字符表入口在节区头表的索引是 15|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>通过十六进制编辑器逐个字节的去分析内核文件的 ELF 头部是希望大家能有个更直观的认识，当然了 Linux 也为我们提供了方便的工具 <code>readelf</code> 命令来检查 ELF 文件的相关信息。我们再通过 <code>readelf</code> 命令验证一下我们刚刚通过十六进制编辑器分析的结果。</p>
+
+<p><code>sh
+$ readelf -h kernel
+ELF Header:
+  Magic:   7f 45 4c 46 01 01 01 00 00 00 00 00 00 00 00 00
+  Class:                             ELF32
+  Data:                              2's complement, little endian
+  Version:                           1 (current)
+  OS/ABI:                            UNIX - System V
+  ABI Version:                       0
+  Type:                              EXEC (Executable file)
+  Machine:                           Intel 80386
+  Version:                           0x1
+  Entry point address:               0x10000c
+  Start of program headers:          52 (bytes into file)
+  Start of section headers:          128512 (bytes into file)
+  Flags:                             0x0
+  Size of this header:               52 (bytes)
+  Size of program headers:           32 (bytes)
+  Number of program headers:         2
+  Size of section headers:           40 (bytes)
+  Number of section headers:         18
+  Section header string table index: 15
+</code></p>
+
+<p>最后我们看一下从磁盘读取内核到内存的方法实现，看看是怎样通过向特定端口发送数据来达到操作磁盘目的的。具体的说明请看代码附带的注释。</p>
+
+<p>```c
+// Read a single sector at offset into dst.
+// 这里使用的是 LBA 磁盘寻址模式
+// LBA是非常单纯的一种寻址模式﹔从0开始编号来定位区块，
+// 第一区块LBA=0，第二区块LBA=1，依此类推
+void
+readsect(void *dst, uint offset)      // 0x10000, 1
+{
+  // Issue command.
+  waitdisk();
+  outb(0x1F2, 1);                     // 要读取的扇区数量 count = 1
+  outb(0x1F3, offset);                // 扇区 LBA 地址的 0-7 位
+  outb(0x1F4, offset >> 8);           // 扇区 LBA 地址的 8-15 位
+  outb(0x1F5, offset >> 16);          // 扇区 LBA 地址的 16-23 位
+  outb(0x1F6, (offset >> 24) | 0xE0); // offset | 11100000 保证高三位恒为 1</p>
+
+<pre><code>                                  //         第7位     恒为1
+                                  //         第6位     LBA模式的开关，置1为LBA模式
+                                  //         第5位     恒为1
+                                  //         第4位     为0代表主硬盘、为1代表从硬盘
+                                  //         第3~0位   扇区 LBA 地址的 24-27 位
+</code></pre>
+
+<p>  outb(0x1F7, 0x20);                  // 20h为读，30h为写</p>
+
+<p>  // Read data.
+  waitdisk();
+  insl(0x1F0, dst, SECTSIZE/4);
+}
+```</p>
+
+<h2>运行内核</h2>
+
+<p>内核从磁盘上载入到内存中后 <code>bootmain</code> 函数接下来就准备运行内核中的方法了。我们还是回到 <code>bootmain</code> 函数上来，请注意看我加上的注释说明。</p>
+
+<p>```c
+void
+bootmain(void)
+{
+  struct elfhdr <em>elf;
+  struct proghdr </em>ph, <em>eph;
+  void (</em>entry)(void);
+  uchar* pa;</p>
+
+<p>  // 从 0xa0000 到 0xfffff 的物理地址范围属于设备空间，
+  // 所以内核放置在 0x10000 处开始
+  elf = (struct elfhdr*)0x10000;</p>
+
+<p>  // 从内核所在硬盘位置读取一内存页 4kb 数据
+  readseg((uchar*)elf, 4096, 0);</p>
+
+<p>  // 判断是否为 ELF 文件格式
+  if(elf->magic != ELF_MAGIC)</p>
+
+<pre><code>return;  // let bootasm.S handle error
+</code></pre>
+
+<p>  // 加载 ELF 文件中的程序段 (ignores ph flags).
+  // 找到内核 ELF 文件的程序头表
+  ph = (struct proghdr<em>)((uchar</em>)elf + elf->phoff);
+  // 内核 ELF 文件程序头表的结束位置
+  eph = ph + elf->phnum;
+  // 开始将内核 ELF 文件程序头表载入内存
+  for(; ph &lt; eph; ph++){</p>
+
+<pre><code>pa = (uchar*)ph-&gt;paddr;
+readseg(pa, ph-&gt;filesz, ph-&gt;off);
+// 如果内存大小大于文件大小，用 0 补齐内存空位
+if(ph-&gt;memsz &gt; ph-&gt;filesz)
+  stosb(pa + ph-&gt;filesz, 0, ph-&gt;memsz - ph-&gt;filesz);
+</code></pre>
+
+<p>  }</p>
+
+<p>  // Call the entry point from the ELF header.
+  // Does not return!
+  // 从内核 ELF 文件入口点开始执行内核
+  entry = (void(*)(void))(elf->entry);
+  entry();
+}
+```</p>
+
+<p>载入内核后根据 ELF 头表的说明，<code>bootmain</code>函数开始将内核 ELF 文件的程序头表从磁盘载入内存，为运行内核代码做着最后的准备工作。根据上一节的分析我们知道内核的 ELF 文件的程序头表紧跟在 ELF 头表后面，程序头表一共 2 个，每个 32 字节大小，一共是 64 字节，我们继续用十六进制编辑器打开 <code>kernel</code> 内核二进制文件看看程序头表的内容。</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="center">type</th>
+<th align="center">off</th>
+<th align="center">vaddr</th>
+<th align="center">paddr</th>
+<th align="center">filesz</th>
+<th align="center">memsz</th>
+<th align="center">flags</th>
+<th align="center">align</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td align="center">01 00 00 00</td>
+<td align="center">00 10 00 00</td>
+<td align="center">00 00 10 80</td>
+<td align="center">00 00 10 00</td>
+<td align="center">96 B5 00 00</td>
+<td align="center">FC 26 01 00</td>
+<td align="center">07 00 00 00</td>
+<td align="center">00 10 00 00|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">type</td>
+<td align="center">off</td>
+<td align="center">vaddr</td>
+<td align="center">paddr</td>
+<td align="center">filesz</td>
+<td align="center">memsz</td>
+<td align="center">flags</td>
+<td align="center">align|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">51 E5 74 64</td>
+<td align="center">00 00 00 00</td>
+<td align="center">00 00 00 00</td>
+<td align="center">00 00 00 00</td>
+<td align="center">00 00 00 00</td>
+<td align="center">00 00 00 00</td>
+<td align="center">07 00 00 00</td>
+<td align="center">04 00 00 00|</td>
+</tr>
+</tbody>
+</table>
+
+
+<ul>
+<li>程序头表 1</li>
+</ul>
+
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="center">字段名称</th>
+<th align="center">大小</th>
+<th align="center">数值</th>
+<th align="center">意义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td align="center">type</td>
+<td align="center">4字节</td>
+<td align="center">01 00 00 00</td>
+<td align="center">可载入的段|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">off</td>
+<td align="center">4字节</td>
+<td align="center">00 10 00 00</td>
+<td align="center">段在文件中的偏移是 4096 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">vaddr</td>
+<td align="center">4字节</td>
+<td align="center">00 00 10 80</td>
+<td align="center">段在内存中的虚拟地址|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">paddr</td>
+<td align="center">4字节</td>
+<td align="center">00 10 00 00</td>
+<td align="center">同段在文件中的偏移量|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">filesz</td>
+<td align="center">4字节</td>
+<td align="center">96 B5 00 00</td>
+<td align="center">段在文件中的大小是 46486 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">memsz</td>
+<td align="center">4字节</td>
+<td align="center">FC 26 01 00</td>
+<td align="center">段在内存中的大小是 75516 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">flags</td>
+<td align="center">4字节</td>
+<td align="center">07 00 00 00</td>
+<td align="center">段的权限是可写、可读、可执行|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">align</td>
+<td align="center">4字节</td>
+<td align="center">00 10 00 00</td>
+<td align="center">段的对齐方式是 4096 字节，即4kb|</td>
+</tr>
+</tbody>
+</table>
+
+
+<ul>
+<li>程序头表 2</li>
+</ul>
+
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="center">字段名称</th>
+<th align="center">大小</th>
+<th align="center">数值</th>
+<th align="center">意义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td align="center">type</td>
+<td align="center">4字节</td>
+<td align="center">51 E5 74 64</td>
+<td align="center"> PT_GNU_STACK 段|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">off</td>
+<td align="center">4字节</td>
+<td align="center">00 00 00 00</td>
+<td align="center">段在文件中的偏移是 0 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">vaddr</td>
+<td align="center">4字节</td>
+<td align="center">00 00 00 00</td>
+<td align="center">段在内存中的虚拟地址|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">paddr</td>
+<td align="center">4字节</td>
+<td align="center">00 00 00 00</td>
+<td align="center">同段在文件中的偏移量|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">filesz</td>
+<td align="center">4字节</td>
+<td align="center">00 00 00 00</td>
+<td align="center">段在文件中的大小是 0 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">memsz</td>
+<td align="center">4字节</td>
+<td align="center">00 00 00 00</td>
+<td align="center">段在内存中的大小是 0 字节|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">flags</td>
+<td align="center">4字节</td>
+<td align="center">07 00 00 00</td>
+<td align="center">段的权限是可写、可读、可执行|</td>
+</tr>
+<tr>
+<td></td>
+<td align="center">align</td>
+<td align="center">4字节</td>
+<td align="center">04 00 00 00</td>
+<td align="center">段的对齐方式是 4 字节|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>同样我们再通过 <code>readelf</code> 命令来验证我们通过十六进制编辑器对内核 ELF 文件的程序头表的分析结果十分正确。</p>
+
+<p>```sh
+readelf -l kernel</p>
+
+<p>Elf file type is EXEC (Executable file)
+Entry point 0x10000c
+There are 2 program headers, starting at offset 52</p>
+
+<p>Program Headers:
+  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align
+  LOAD           0x001000 0x80100000 0x00100000 0x0b596 0x126fc RWE 0x1000
+  GNU_STACK      0x000000 0x00000000 0x00000000 0x00000 0x00000 RWE 0x4</p>
+
+<p> Section to Segment mapping:
+  Segment Sections&hellip;
+   00     .text .rodata .stab .stabstr .data .bss
+   01
+```</p>
+
+<p>在预备知识里我们讲到 ELF 文件的程序头表描述了程序各个段的情况，所以我们再通过<code>readelf</code>命令看看内核文件都有那些段</p>
+
+<p>```sh
+readelf -S kernel
+There are 18 section headers, starting at offset 0x1f600:</p>
+
+<p>Section Headers:
+  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .text             PROGBITS        80100000 001000 008111 00  AX  0   0  4
+  [ 2] .rodata           PROGBITS        80108114 009114 000672 00   A  0   0  4
+  [ 3] .stab             PROGBITS        80108786 009786 000001 0c  WA  4   0  1
+  [ 4] .stabstr          STRTAB          80108787 009787 000001 00  WA  0   0  1
+  [ 5] .data             PROGBITS        80109000 00a000 002596 00  WA  0   0 4096
+  [ 6] .bss              NOBITS          8010b5a0 00c596 00715c 00  WA  0   0 32
+  [ 7] .debug_line       PROGBITS        00000000 00c596 001f8c 00      0   0  1
+  [ 8] .debug_info       PROGBITS        00000000 00e522 00a965 00      0   0  1
+  [ 9] .debug_abbrev     PROGBITS        00000000 018e87 0026ed 00      0   0  1
+  [10] .debug_aranges    PROGBITS        00000000 01b578 0003a0 00      0   0  8
+  [11] .debug_loc        PROGBITS        00000000 01b918 002f30 00      0   0  1
+  [12] .debug_str        PROGBITS        00000000 01e848 000cdc 01  MS  0   0  1
+  [13] .comment          PROGBITS        00000000 01f524 00001c 01  MS  0   0  1
+  [14] .debug_ranges     PROGBITS        00000000 01f540 000018 00      0   0  1
+  [15] .shstrtab         STRTAB          00000000 01f558 0000a5 00      0   0  1
+  [16] .symtab           SYMTAB          00000000 01f8d0 0023d0 10     17 138  4
+  [17] .strtab           STRTAB          00000000 021ca0 0012d0 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings)
+  I (info), L (link order), G (group), T (TLS), E (exclude), x (unknown)
+  O (extra OS processing required) o (OS specific), p (processor specific)
+```</p>
+
+<p>结合这两次 <code>readelf</code> 命令的输出我们不难看出，内核文件的 ELF 程序头表中只有第一个是需要被加载的，而这个程序头表指出的加载位置 <code>0x80100000</code> 和内核程序的代码段 <code>.text</code> 的位置是一样的。</p>
+
+<p>而要加载的段是 <code>.text .rodata .stab .stabstr .data .bss</code> ，这些段在内存中的大小总和是<del><code>0x008111 + 0x000672 + 0x000001 + 0x000001 + 0x002596 + 0x00715c = 0x73335</code> 按照对齐要求 <code>0x1000</code> 对齐后为 <code>0x75516</code> 和 ELF 程序头表中的内存大小信息一致</del>（这里特别感谢<a href="https://xuzhenglun.github.io/">@徐正伦同学的指正</a>）<code>0x008111 + 0x000672 + 0x000001 + 0x000001 + 0x002596 + 0x00715c = 73335 即 0x11e77</code> 按照对齐要求 <code>0x1000</code> 对齐后为 <code>75516 即 0x000126fc（注意大小端转换，FC 26 01 00 是按照小端排列的，转换成正常的十六进制数为 0x000126fc）</code> 和 ELF 程序头表中的内存大小信息一致。</p>
+
+<p>我们再算算这些段在文件中的大小，由于这些段在文件中是顺序排列的，所以用 <code>.bss段</code> 的文件偏移量减去 <code>.text段</code> 的文件偏移量 <code>0x00c596 - 0x001000 = 46486</code> 这也是和 ELF 程序头表中段在文件中大小的信息一致。</p>
+
+<h2>内核加载后的系统内存布局</h2>
+
+<p>至此内核已经被载入内存并准备投入运行了。在结束这一篇前我们再看一眼目前状态下系统整体的内存布局，对即将运行的内核环境有一个大致的了解。我们来看几个关键点</p>
+
+<p>```c
+// bootmain.c</p>
+
+<p>void
+bootmain(void)
+{
+  struct elfhdr <em>elf;
+  struct proghdr </em>ph, <em>eph;
+  void (</em>entry)(void);
+  uchar* pa;</p>
+
+<p>  // 从 0xa0000 到 0xfffff 的物理地址范围属于设备空间，
+  // 所以内核放置在 0x10000 处开始
+  elf = (struct elfhdr*)0x10000;</p>
+
+<p>  // 从内核所在硬盘位置读取一内存页 4kb 数据
+  readseg((uchar*)elf, 4096, 0);</p>
+
+<p>  // 省略后面的代码&hellip;&hellip;
+}
+```</p>
+
+<p>由此可知内核被放置在 0x10000 处开始。</p>
+
+<p>```nasm</p>
+
+<h1>bootasm.S</h1>
+
+<p>.code32  # Tell assembler to generate 32-bit code now.
+start32:
+  # Set up the protected-mode data segment registers
+  # 像上面讲 ljmp 时所说的，这时候已经在保护模式下了
+  # 数据段在 GDT 中的下标是 2，所以这里数据段的段选择子是 2 &lt;&lt; 3 = 0000 0000 0001 0000
+  # 这 16 位的段选择子中的前 13 位是 GDT 段表下标，这里前 13 位的值是 2 代表选择了数据段
+  # 这里将 3 个数据段寄存器都赋值成数据段段选择子的值
+  movw    $(SEG_KDATA&lt;&lt;3), %ax    # Our data segment selector  段选择子赋值给 ax 寄存器
+  movw    %ax, %ds                # &ndash;> DS: Data Segment        初始化数据段寄存器
+  movw    %ax, %es                # &ndash;> ES: Extra Segment       初始化扩展段寄存器
+  movw    %ax, %ss                # &ndash;> SS: Stack Segment       初始化堆栈段寄存器
+  movw    $0, %ax                 # Zero segments not ready for use  ax 寄存器清零
+  movw    %ax, %fs                # &ndash;> FS                      辅助寄存器清零
+  movw    %ax, %gs                # &ndash;> GS                      辅助寄存器清零</p>
+
+<p>  # Set up the stack pointer and call into C.
+  movl    $start, %esp            # 栈顶被放置在 0x7C00 处，即 $start
+  call    bootmain</p>
+
+<p>```</p>
+
+<p>由此可知在执行 <code>bootmain.c</code> 之前 <code>bootasm.S</code> 汇编代码已经将栈的栈顶设置在了 <code>0x7C00</code> 处。之前我们了解过 x86 架构计算机的启动过程，BIOS 会将引导扇区的引导程序加载到 <code>0x7C00</code> 处并引导 CPU 从此处开始运行，故栈顶即被设置在了和引导程序一致的内存位置上。我们知道栈是自栈顶开始向下增长的，所以这里栈会逐渐远离引导程序，所以这里这样安置栈顶的位置并无什么问题。</p>
+
+<p>最后放一张简单的内存布局示意图</p>
+
+<p>```
+0x00000000
++&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;—+
+|        0x7c00      0x7d00         0x10000                               |
+|    栈    |  引导程序  |                |    内核                          |
++&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;+</p>
+
+<pre><code>                                                             0xffffffff
+</code></pre>
+
+<p>```</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[【学习xv6】从实模式到保护模式]]></title>
@@ -42,7 +1468,7 @@
 
 <h4>“段基址” + “偏移量” 寻址方式的由来</h4>
 
-<p>了解了 x86 的内存寻址方式，不禁要问：“为什么要这么设计？”这得从英特尔的 8086 CPU 开始讲起。我们有时说起计算机硬件配置的时候经常会说：“我的电脑是 32 位的”。这里的 32 位起始指的是 CPU 内部的“数据总线”宽度，也叫 AUL（算数逻辑单元）的宽度。说白了就是 CPU 一次性传递数据的宽度。</p>
+<p>了解了 x86 的内存寻址方式，不禁要问：“为什么要这么设计？”这得从英特尔的 8086 CPU 开始讲起。我们有时说起计算机硬件配置的时候经常会说：“我的电脑是 32 位的”。这里的 32 位起始指的是 CPU 内部的“数据总线”宽度，也叫<del> AUL</del> ALU（算数逻辑单元，感谢 Zongren Zhang 同学找到错误并指正）的宽度。说白了就是 CPU 一次性传递数据的宽度。</p>
 
 <p>英特尔的 8086 CPU 是 16 位的，如果直接用来表示内存地址的话，16 位最大可以表示的内存地址是 2<sup>16</sup> = 65536 个地址，每个地址代表一字节的内存数据的话，16 位最多只能支持 64KB 内存，这显然是不够用的。于是英特尔在保持数据线宽为 16 位的同时将地址线的宽度增大到 20 位，也就是说内存地址是 20 位的，这样就可以拥有 2<sup>20</sup> = 1048576 个地址，最多支持 1MB 的内存，当时的人们认为这样就足够了。</p>
 
