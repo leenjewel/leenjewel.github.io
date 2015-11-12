@@ -104,7 +104,7 @@ bootmain(void)
 
 既然知道了内核的入口点是 `_start` 通过简单的文本搜索不难找到这个入口点在 `entry.S` 文件中，我们直接先列出代码：
 
-```asm
+```
 #include "asm.h"
 #include "memlayout.h"
 #include "mmu.h"
