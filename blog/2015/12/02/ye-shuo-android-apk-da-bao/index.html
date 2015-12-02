@@ -1,0 +1,1133 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>也说 Android apk 打包 - leenjewel Blog</title>
+	<meta name="author" content="leenjewel">
+
+	
+	<meta name="description" content="我们在开发 Android 应用程序的时候一般都只需要使用 Eclipse 或是 Android Studio 这样的 IDE 编写好业务逻辑，最终由这些开发工具来协助我们将代码打包生成最终可以在设备上运行的 APK 包。正因为有这些集成度很高的开发工具，我们很少能够接触到 Android APK &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="leenjewel Blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="http://tajs.qq.com/stats?sId=52606582" charset="UTF-8"></script>
+
+</head>
+
+
+<body>
+	<header id="header" class="inner"><nav id="title-nav">
+<h1><a href="/">leenjewel Blog</a></h1>
+
+<h2>Anything about code.</h2>
+
+</nav>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:leenjewel.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+		<a class="github" href="https://github.com/leenjewel" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:leenjewel.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">也说 Android Apk 打包</h2>
+	<div class="entry-content"><p>我们在开发 Android 应用程序的时候一般都只需要使用 Eclipse 或是 Android Studio 这样的 IDE 编写好业务逻辑，最终由这些开发工具来协助我们将代码打包生成最终可以在设备上运行的 APK 包。正因为有这些集成度很高的开发工具，我们很少能够接触到 Android APK 包生成的具体流程。</p>
+
+<p>其实如果你 Google 一下“Android apk 打包流程”或者“手动打包 Android apk”，能找到很多介绍 Android APK 打包流程的内容，而我为什么又要再多写一篇呢？是因为这些内容大多只介绍了一个标准的 Android 工程是如何一步步变成 apk 包的，而很少有写一个标准 Android 工程附带依赖几个 Android Library 的情况又是怎样的。要知道在国内的 Android 开发环境下你的产品不接入几个第三方 SDK 你都不好意思出门跟人家到招呼！而往往一个产品根据发放的渠道不同，又要接入不同的第三方 SDK。所以我想从这些方面入手来写这一篇。另外，网上大多数文章都已经有些过时了，例如大多数最后都提到用 <code>apkbuilder</code> 这个脚本来生成最终的 apk 包，而实际上目前最新的 Android SDK 早就已经移除了这个脚本，更改了最终生成 apk 包的方式。</p>
+
+<h2>概述</h2>
+
+<p>一个 Android 工程最后变成 apk 包大概要做这么几件事儿：</p>
+
+<ul>
+<li>1、生成 <code>R.java</code> 文件</li>
+<li>2、将 <code>.java</code> 文件编译成 <code>.class</code> 文件</li>
+<li>3、将 <code>.class</code> 文件打包成 <code>.jar</code> 文件</li>
+<li>4、将所有 <code>.jar</code> 文件（包括依赖库）编译成 <code>classes.dex</code> 文件</li>
+<li>5、将 <code>assets</code> 和 <code>res</code> 文件夹中所有的资源文件打包成一个 <code>apk</code> 包</li>
+<li>6、将 <code>classes.dex</code> 文件添加进 <code>apk</code> 包</li>
+<li>7、如果有使用 <code>NDK</code> 技术的话，将生成的 <code>.so</code> 文件添加进 <code>apk</code> 包</li>
+<li>8、对 <code>apk</code> 包进行签名</li>
+</ul>
+
+
+<p>说白了一个 apk 包就是由<strong>代码</strong>和<strong>资源</strong>组成的。代码的处理基本上就是编译，这个没什么可说的。我们主要说说资源打包。我们通过亲手实践来理解 apk 生成中的资源处理过程。</p>
+
+<h2>建立试验环境</h2>
+
+<p>找一个空白目录，建立一个标准的 Android 工程，再建立两个标准的 Android Library 工程。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$android</span> create project --activity MainActivity --package com.leenjewel.test --path ./AndroidTestProject -t android-21
+</span><span class='line'>
+</span><span class='line'><span class="nv">$android</span> create lib-project --package com.leenjewel.test.liba --path ./AndroidLibProjectA -t android-21
+</span><span class='line'>
+</span><span class='line'><span class="nv">$android</span> create lib-project --package com.leenjewel.test.libb --path ./AndroidLibProjectB -t android-21
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>怎么样？是不是有些同学连命令行手工建立 Android 工程都是头一次看到啊？可以去刚刚新建好的三个工程的目录看看，其实 Android 的标准工程和 Library 工程并没有什么太大的区别。</p>
+
+<h2>【试验1】第一次生成 R.java 文件</h2>
+
+<p>然后我们切换到刚刚建立的标准 Android 工程的目录下面，准备手工生成 <code>R.java</code> 文件。<code>R.java</code> 文件是什么我就不解释了，这里我们根据主项目和两个 Libary 项目分别生成三个 <code>R.java</code> 文件，后面我们再做解释，先一步一步跟着做。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$aapt</span> package -m -J ./gen -M ./AndroidManifest.xml <span class="se">\</span>
+</span><span class='line'>    -S ./res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay
+</span><span class='line'>
+</span><span class='line'><span class="nv">$aapt</span> package -m -J ./gen -M ../AndroidLibProjectA/AndroidManifest.xml  <span class="se">\</span>
+</span><span class='line'>    -S ./res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay <span class="se">\</span>
+</span><span class='line'>    --non-constant-id
+</span><span class='line'>
+</span><span class='line'><span class="nv">$aapt</span> package -m -J ./gen -M ../AndroidLibProjectB/AndroidManifest.xml <span class="se">\</span>
+</span><span class='line'>    -S ./res  <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay <span class="se">\</span>
+</span><span class='line'>    --non-constant-id
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果三个命令都执行成功的话会在刚刚建立的标准 Android 工程根目录的 <code>gen</code> 目录下根据不同的子目录产生三个 R.java 文件：</p>
+
+<ul>
+<li><code>./gen/com/leenjewel/test/R.java</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">leenjewel</span><span class="o">.</span><span class="na">test</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">R</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">attr</span> <span class="o">{</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">drawable</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">ic_launcher</span><span class="o">=</span><span class="mh">0x7f020000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">layout</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">main</span><span class="o">=</span><span class="mh">0x7f030000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">string</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">app_name</span><span class="o">=</span><span class="mh">0x7f040000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>./gen/com/leenjewel/test/liba/R.java</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">leenjewel</span><span class="o">.</span><span class="na">test</span><span class="o">.</span><span class="na">liba</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">R</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">attr</span> <span class="o">{</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">drawable</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kt">int</span> <span class="n">ic_launcher</span><span class="o">=</span><span class="mh">0x7f020000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">layout</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kt">int</span> <span class="n">main</span><span class="o">=</span><span class="mh">0x7f030000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">string</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kt">int</span> <span class="n">app_name</span><span class="o">=</span><span class="mh">0x7f040000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>./gen/com/leenjewel/test/libb/R.java</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">leenjewel</span><span class="o">.</span><span class="na">test</span><span class="o">.</span><span class="na">libb</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">R</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">attr</span> <span class="o">{</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">drawable</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kt">int</span> <span class="n">ic_launcher</span><span class="o">=</span><span class="mh">0x7f020000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">layout</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kt">int</span> <span class="n">main</span><span class="o">=</span><span class="mh">0x7f030000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">string</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kt">int</span> <span class="n">app_name</span><span class="o">=</span><span class="mh">0x7f040000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>【试验1】观测结果：</h3>
+
+<ul>
+<li>1、三个 R.java 文件中资源的 ID 相同。</li>
+<li>2、三个 R.java 文件的 package 不同。</li>
+<li>3、Library 工程生成的 R.java 文件的资源属性没有 final 标识。</li>
+</ul>
+
+
+<p>第一个试验我们得出了三个观测结果，我们的试验继续。通过刚刚生成的三个 R.java 文件不难看出现在这三个工程各自持有的资源是一样的，接下来我们先要给这三个工程加点儿不一样的东西进去。</p>
+
+<h3>特别提示：</h3>
+
+<p>接下来为了更好的观察试验结果，我们可以用熟悉的代码管理工具如 git 或 svn 给主工程 <code>AndroidTestProject</code> 初始化一个代码版本库并进行一次提交，这样通过 diff 我们可以更方便的观察试验变化。</p>
+
+<p>每一个工程的 <code>res/drawable-*/</code> 目录下面都有一个自动生成的 <code>ic_launcher.png</code> 文件，他们的内容都是一样的：“经典的 Android 机器人”。为了区分他们，我们随便用个图片编辑工具在两个 Library 工程的 <code>ic_launcher.png</code> 的小机器人胸前按照它们所属的项目分别打上 <code>A</code> 和 <code>B</code> 两个标签。</p>
+
+<p>然后再分别编辑 <code>res/values/strings.xml</code> 资源文件，加入一些新的字符串节点。</p>
+
+<ul>
+<li><code>AndroidTestProject/res/values/strings.xml</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;resources&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;app_name&quot;</span><span class="nt">&gt;</span>MainActivity<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- new!!! --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;same_thing&quot;</span><span class="nt">&gt;</span>SameP<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;p_thing&quot;</span><span class="nt">&gt;</span>PThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>AndroidLibProjectA/res/vaues/strings.xml</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;resources&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;app_name&quot;</span><span class="nt">&gt;</span>A<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- new!!! --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;same_thing&quot;</span><span class="nt">&gt;</span>SameA<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;a_thing&quot;</span><span class="nt">&gt;</span>AThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li><code>AndroidLibProjectB/res/values/strings.xml</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;resources&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;app_name&quot;</span><span class="nt">&gt;</span>B<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- new!!! --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;same_thing&quot;</span><span class="nt">&gt;</span>SameB<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;b_thing&quot;</span><span class="nt">&gt;</span>BThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>做完了这些改变后如果已经给主工程建立了代码库的同学这个时候可以再次提交一下。然后我们准备进行下一个试验。</p>
+
+<p>我们先再次重新生成一下前面刚刚生成过的三个 <code>R.java</code> 文件。生成后可以发现新增加了几个资源 ID，但是我们刚刚观测的结果没变，生成的三个 <code>R.java</code> 文件的资源 ID 依然是一致的。出于篇幅考虑这里就不再放出三个 R.java 文件的内容了，只放了主工程的 R.java 文件内容。</p>
+
+<ul>
+<li><code>AndroidTestProject/gen/com/leenjewel/test/R.java</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">leenjewel</span><span class="o">.</span><span class="na">test</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">R</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">attr</span> <span class="o">{</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">drawable</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">ic_launcher</span><span class="o">=</span><span class="mh">0x7f020000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">layout</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">main</span><span class="o">=</span><span class="mh">0x7f030000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">string</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">a_thing</span><span class="o">=</span><span class="mh">0x7f040003</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">app_name</span><span class="o">=</span><span class="mh">0x7f040000</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">b_thing</span><span class="o">=</span><span class="mh">0x7f040002</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">p_thing</span><span class="o">=</span><span class="mh">0x7f040004</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">same_thing</span><span class="o">=</span><span class="mh">0x7f040001</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里我们修改过资源后重新生成三个 <code>R.java</code> 文件，再次提交，准备新的试验。</p>
+
+<h2>【试验2】改变资源路径顺序重新生成 R.java 文件</h2>
+
+<p>以主工程为例，我们刚刚一直使用的生成主工程 R.java 文件的命令是：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$aapt</span> package -m -J ./gen -M ./AndroidManifest.xml <span class="se">\</span>
+</span><span class='line'>    -S ./res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>现在我们调整一下这个命令里 <code>-S</code> 参数的顺序，将 <code>AndroidLibProjectA/res</code> 放在第一，其他不变：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$aapt</span> package -m -J ./gen -M ./AndroidManifest.xml <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ./res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这时再次生成主工程的 <code>R.java</code> 文件看看有什么变化：</p>
+
+<ul>
+<li><code>AndroidTestProject/gen/com/leenjewel/test/R.java</code></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">leenjewel</span><span class="o">.</span><span class="na">test</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">R</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">attr</span> <span class="o">{</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">drawable</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">ic_launcher</span><span class="o">=</span><span class="mh">0x7f020000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">layout</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">main</span><span class="o">=</span><span class="mh">0x7f030000</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">string</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">a_thing</span><span class="o">=</span><span class="mh">0x7f040004</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">app_name</span><span class="o">=</span><span class="mh">0x7f040000</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">b_thing</span><span class="o">=</span><span class="mh">0x7f040002</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">p_thing</span><span class="o">=</span><span class="mh">0x7f040003</span><span class="o">;</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">same_thing</span><span class="o">=</span><span class="mh">0x7f040001</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>【试验2】观测结果：</h3>
+
+<ul>
+<li>1、改变资源路径顺序后 R.java 文件中资源 ID 的值发生了变化。</li>
+</ul>
+
+
+<p>注意，这次我们不提交文件的变动，将主工程还原到调整资源路径顺序之前的状态然后继续我们的试验。</p>
+
+<h2>【试验3】将资源生成 APK 包</h2>
+
+<p>下面我们要将主工程和两个依赖库工程的资源打包，这也是 Android 应用程序 apk 包生成过程中的步骤之一。这里我们直接给出命令：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$aapt</span> package -f -M AndroidManifest.xml <span class="se">\</span>
+</span><span class='line'>    -S ./res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    -F ./out/res.apk <span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个命令看上去多多少少和刚刚生成 R.java 的命令有些类似，如果执行顺利的话会在主工程根目录下面的 <code>out</code> 目录下生成一个叫做 <code>res.apk</code> 的包。当然这个包并不能在 Android 设备上运行，这只是个半成品，我们继续。</p>
+
+<p>了解 Android 开发的人都知道 apk 其实就是一个 zip 压缩包，用 zip 解压缩软件就可以进行解压缩操作。但是当我们尝试通过 zip 解压缩我们刚刚生成的 <code>res.apk</code> 后发现里面并不是简简单单的将我们的资源文件直接打包进去而是额外的还做了一些类似于编译的操作，例如我们之前编辑过的 <code>res/values/strings.xml</code> 资源就已经被“编译”成为 <code>resources.arsc</code> 文件的一部分，而诸如 <code>AndroidManifest.xml</code> 这样的文件也不再是明文的我们可以看懂的格式了。</p>
+
+<p>这时我们需要一个工具将我们刚刚生成的这个 <code>res.apk</code> 包“反编译”回来，这个好用的工具就是 <a href="https://ibotpeaches.github.io/Apktool/">apktool</a>，下载这个工具后我们来“反编译”我们的 apk 包：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$java</span> -jar apktool.jar d res.apk
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果执行顺利的话我们在 <code>res.apk</code> 包所在的同级目录下可以看到一个 <code>res</code> 目录，里面就是刚刚通过 apktool 反编译回来的文件，我们重点观察两个文件：</p>
+
+<ul>
+<li><code>ic_launcher.png</code> 文件</li>
+<li><code>res/values/strings.xml</code> 文件</li>
+</ul>
+
+
+<p>由于之前我们给主工程和两个依赖库工程的 <code>ic_launcher.png</code> 文件做过标记，所以这时候不难看出：</p>
+
+<h3>【试验3】观测结果：</h3>
+
+<ul>
+<li>1、<code>res.apk</code> 包中 <code>ic_launcher.png</code> 文件来自 AndroidTestProject 即来自主工程。</li>
+<li><p>2、<code>res.apk</code> 包中 <code>res/values/strings.xml</code> 文件的资源 <code>same_thing</code> 和 <code>app_name</code> 的值来自 AndroidTestProject 即来自主工程。</p></li>
+<li><p><code>res/values/strings.xml</code> 文件</p></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;resources&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;app_name&quot;</span><span class="nt">&gt;</span>MainActivity<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;same_thing&quot;</span><span class="nt">&gt;</span>SameP<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;b_thing&quot;</span><span class="nt">&gt;</span>BThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;a_thing&quot;</span><span class="nt">&gt;</span>AThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;p_thing&quot;</span><span class="nt">&gt;</span>PThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>不用提交任何代码，我们试验继续。</p>
+
+<h2>【试验4】改变资源路径顺序重新生成 APK 包</h2>
+
+<p>把刚刚第一次生成的 <code>res.apk</code> 和用 apktool 反编译出来的 <code>res</code> 目录都删掉。为了方便对比，再看一眼刚刚用来生成 apk 的命令：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$aapt</span> package -f -M AndroidManifest.xml <span class="se">\</span>
+</span><span class='line'>    -S ./res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    -F ./out/res.apk <span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后我们依然是调整一下 <code>-S</code> 命令参数的顺序和刚才一样我们把主工程的 <code>res</code> 目录和依赖库工程 AndroidLibProjectA 的 <code>res</code> 目录调换顺序再生成一下 apk 包看看：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$aapt</span> package -f -M AndroidManifest.xml <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ./res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    -F ./out/res.apk <span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>重新生成新的 <code>res.apk</code> 包之后我们还是用 apktool 将包进行反编译然后观察：</p>
+
+<h3>【试验4】观测结果：</h3>
+
+<ul>
+<li>1、<code>res.apk</code> 包中 <code>ic_launcher.png</code> 文件来自 AndroidLibProjectA 即来自依赖库 A 工程。</li>
+<li><p>2、<code>res.apk</code> 包中 <code>res/values/strings.xml</code> 文件的资源 <code>same_thing</code> 和 <code>app_name</code> 的值来自 AndroidLibProjectA 即来自依赖库 A 工程。</p></li>
+<li><p><code>res/values/strings.xml</code> 文件</p></li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;resources&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;app_name&quot;</span><span class="nt">&gt;</span>A<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;same_thing&quot;</span><span class="nt">&gt;</span>SameA<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;b_thing&quot;</span><span class="nt">&gt;</span>BThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;p_thing&quot;</span><span class="nt">&gt;</span>PThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;string</span> <span class="na">name=</span><span class="s">&quot;a_thing&quot;</span><span class="nt">&gt;</span>AThing<span class="nt">&lt;/string&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果你觉得意犹未尽那么可以尝试再次调整资源路径顺序，这次把依赖库 B 工程的资源目录的顺序放在最前面然后重复试验 4 的步骤再次生成 <code>res.apk</code> 包并使用 apktool 反编译之后观察试验结果。而我们不打算再这么做了，因为结果已经很明确了。</p>
+
+<p>试验就暂时做到这，接下来我们说说通过这四个无聊的小试验我们了解到了什么。</p>
+
+<p>细心的同学相比已经有结论了。如果单单只是一个 Android 标准工程的资源打包的话那就轻松很多了，直接一个命令就搞定。而附带诸多 Library 工程依赖的话就要考虑资源的合并问题了，而资源合并过程中主要要处理的就是同名资源问题。通过我们做过的试验我们可以得出一个结论即：</p>
+
+<blockquote><p><strong>Android 的资源打包过程中对于资源特别是同名资源的处理只和资源路径的先后顺序有关系，只要资源路径顺序不变，在 R.java 文件中生成的资源引用 ID 就不变</strong>。</p></blockquote>
+
+<p>资源打包的事情就说到这里。顺带提一句，上面的试验中并没有出现 <code>assets</code> 资源文件打包的情况，其实 <code>assets</code> 资源文件打包和 <code>res</code> 资源文件打包的原理和规则都是一样的，加上 <code>assets</code> 资源打包的命令看起来大概是这个样子的</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$aapt</span> package -f -M AndroidManifest.xml <span class="se">\</span>
+</span><span class='line'>    -A ./assets <span class="se">\</span>
+</span><span class='line'>    -A ../AndroidLibProjectA/assets <span class="se">\</span>
+</span><span class='line'>    -A ../AndroidLibProjectB/assets <span class="se">\</span>
+</span><span class='line'>    -S ./res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectA/res <span class="se">\</span>
+</span><span class='line'>    -S ../AndroidLibProjectB/res <span class="se">\</span>
+</span><span class='line'>    -I ~/Dev/android-sdk-macosx/platforms/android-21/android.jar<span class="se">\</span>
+</span><span class='line'>    -F ./out/res.apk <span class="se">\</span>
+</span><span class='line'>    --auto-add-overlay
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>assets</code> 资源文件对于同名文件资源的合并处理规则也是和资源路径顺序有关。</p>
+
+<h2>编译源代码</h2>
+
+<ul>
+<li>编译 java</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>javac -target 1.7  -source 1.7 <span class="se">\</span>
+</span><span class='line'>    -d  ./bin <span class="se">\</span>
+</span><span class='line'>    -bootclasspath  ~/Dev/android-sdk-macosx/platforms/android-21/android.jar <span class="se">\</span>
+</span><span class='line'>    -classpath ./libs/lib1.jar:./libs/lib2.jar:./libs/lib3.jar <span class="se">\</span>
+</span><span class='line'>    ./src/com/package/your/xxxx.java <span class="se">\</span>
+</span><span class='line'>    ./src/com/package/your/xxxxx.java <span class="se">\</span>
+</span><span class='line'>    ./src/com/package/your/xxxxxx.java
+</span><span class='line'>    ....
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里要说的是 Android Library 工程和 Android 主工程的源代码是分开编译的。因为主工程中的代码是依赖 Library 工程的，所以要将所有 Library 工程编译并生成 <code>jar</code> 文件，然后再编译主工程时将所有 Library 工程的 <code>jar</code> 引入 <code>classpath</code> 中。</p>
+
+<p>主工程编译的时候记得要连同之前生成在 <code>gen</code> 文件夹中的 <code>R.java</code> 文件和 <code>src</code> 文件夹下面的所有源代码一起编译。</p>
+
+<ul>
+<li>生成 jar</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>jar  cvf  ./bin/classes.jar <span class="se">\</span>
+</span><span class='line'>    -C ./bin  .
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>生成 dex</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>dx  --dex <span class="se">\</span>
+</span><span class='line'>    --output  ./bin/classes.dex <span class="se">\</span>
+</span><span class='line'>    ./bin/classes.jar <span class="se">\</span>
+</span><span class='line'>    ./libs/lib1.jar <span class="se">\</span>
+</span><span class='line'>    ./libs/lib2.jar <span class="se">\</span>
+</span><span class='line'>    ./libs/lib3.jar <span class="se">\</span>
+</span><span class='line'>    ../AndroidLibProjectA/libs/lib1.jar <span class="se">\</span>
+</span><span class='line'>    ../AndroidLibProjectA/libs/lib2.jar <span class="se">\</span>
+</span><span class='line'>    ../AndroidLibProjectB/libs/lib1.jar <span class="se">\</span>
+</span><span class='line'>    ../AndroidLibProjectB/libs/lib2.jar
+</span><span class='line'>    ......
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这样所有的 Java 代码和依赖库就全部被编译成最终 Android apk 中要用到的 <code>classes.dex</code> 文件了。</p>
+
+<h2>生成最终的 apk 包</h2>
+
+<ul>
+<li>添加 classes.dex 文件</li>
+</ul>
+
+
+<p>然后我们把生成的 <code>classes.dex</code> 文件丢进刚刚生成的资源 apk 包里。原本这步是通过 <code>apkbuilder</code> 脚本来做的，现在 Google 统一改成用 <code>aapt</code> 命令来做了。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nb">cd</span> ./bin
+</span><span class='line'>aapt add ../out/res.apk  classes.dex
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这里需要注意的是 <code>classes.dex</code> 文件前面一定不要加额外的路径，如果加了路径那么这些路径会一并带进 apk 包里。而 Android apk 包里的 <code>classes.dex</code> 文件是直接放进包里面的，不能带路径。</p>
+
+<ul>
+<li>添加 .so 文件</li>
+</ul>
+
+
+<p>如果你使用了 NDK 技术或者有库依赖，那也需要将这些依赖的 <code>.so</code> 文件添加进 apk 包，方法和添加 <code>classes.dex</code> 一样。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$aapt</span> add res.apk lib/armeabi/xxx.so
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>据说 Windows 环境下执行上述 <code>aapt add</code> 命令时路径也要用类 Unix 系统的斜杠而不能用 Windows 的反斜杠，我手边没有 Windows 环境没有亲自尝试。</p>
+
+<ul>
+<li>签名</li>
+</ul>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>jarsigner  -digestalg  SHA1 <span class="se">\</span>
+</span><span class='line'>    -sigalg  MD5withRSA <span class="se">\</span>
+</span><span class='line'>    -verbose <span class="se">\</span>
+</span><span class='line'>    -keystore  /your/keystore/file/path/xxxx.keystore <span class="se">\</span>
+</span><span class='line'>    -storepass  xxxxxxxx <span class="se">\</span>
+</span><span class='line'>    -keypass  xxxxxxxx <span class="se">\</span>
+</span><span class='line'>    -signedjar  ./out/res.signed.apk <span class="se">\</span>
+</span><span class='line'>    ./out/res.apk  <span class="s2">&quot;your keystore alias&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>优化 apk 包</li>
+</ul>
+
+
+<p>这是 Google 官方文档提到的将 apk 包文件做一下对齐操作。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>zipalign  -f  4  ./out/res.signed.apk  ./out/your.final.apk
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>至此一个可放在 Android 设备上运行的 apk 包就成功的生成了。</p>
+
+<h2>Android 第三方库的集成方式</h2>
+
+<p>前面也说了在国内特殊的 Android 开发环境下你的 Android 应用不接入几个第三方 SDK 你出门都不好意思和别人打招呼。甚至有时我们为了针对各种不同的渠道，一个 Android 应用程序出包时要不停的切换各种第三方 SDK 依赖，想必搞过 Android 开发的人都知道这是个很头疼的问题。</p>
+
+<p>有了前面针对 Android apk 打包流程的介绍，我们最后再来探讨一下 Android 出包，特别是接入各种第三方 SDK ，针对不同渠道切换不同依赖出包的更为灵活的方式的思路。</p>
+
+<h3>【集成方式1】以标准 Android Library Project 方式集成</h3>
+
+<p>我们一般在使用自己内部开发的一些公共库或公共组件时会选用这种方式。所有的资源和代码都以标准的 Android Library Porject 的形式呈现，开发应用时只需要声明引用这些库工程即可。</p>
+
+<p>通过刚刚的试验我们知道只要引入资源的路径顺序不变，主工程和依赖库工程所生成的 <code>R.java</code> 文件中资源 ID 的值是一样的。所以在开发依赖库工程时，在依赖库工程中通过自己的 R 类来引用资源写好的逻辑代码在主工程中同样是可以正常工作的。</p>
+
+<h3>【集成方式2】依赖库通过复制粘贴进主工程的方式集成</h3>
+
+<p>如果我们开发的库要发布给第三方使用的时候，一般会将代码混淆打包成 <code>jar</code> 文件连同资源文件一起发送给第三方。第三方拿到这样形式的 SDK 后一般会通过复制粘贴的方式将资源文件拷贝进主工程的 <code>res</code> 或 <code>assets</code> 文件夹内，将 <code>jar</code> 包拷贝进主工程的 <code>libs</code> 文件夹内。</p>
+
+<p>这时由于库使用的资源文件是直接放置在主工程中的，所以最终生成的资源 ID 是不同的。存在于第三方库 <code>jar</code> 包中的库逻辑如果还是按照 R 类来引用资源的话就不行了。因为库逻辑是不可能预先知道主工程的包名的，这时只能通过 Java 的“反射”机制来进行资源引用了。举个例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="kt">int</span> <span class="nf">getResId</span><span class="o">(</span><span class="n">String</span> <span class="n">resType</span><span class="o">,</span> <span class="n">String</span> <span class="n">resName</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>  <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">Class</span> <span class="n">localClass</span> <span class="o">=</span> <span class="n">Class</span><span class="o">.</span><span class="na">forName</span><span class="o">(</span><span class="n">getPackageName</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;.R$&quot;</span> <span class="o">+</span> <span class="n">resType</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">Field</span> <span class="n">localField</span> <span class="o">=</span> <span class="n">localClass</span><span class="o">.</span><span class="na">getField</span><span class="o">(</span><span class="n">resName</span><span class="o">);</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">Integer</span><span class="o">.</span><span class="na">parseInt</span><span class="o">(</span><span class="n">localField</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">localField</span><span class="o">.</span><span class="na">getName</span><span class="o">()).</span><span class="na">toString</span><span class="o">());</span>
+</span><span class='line'>  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">ClassNotFoundException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>      <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">NoSuchFieldException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>      <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">NumberFormatException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>      <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IllegalAccessException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>      <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">IllegalArgumentException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="c1">// TODO Auto-generated catch block</span>
+</span><span class='line'>      <span class="n">e</span><span class="o">.</span><span class="na">printStackTrace</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  <span class="k">return</span> <span class="mi">0</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这是个通过 Java “反射”机制查找资源 ID 的方法。一般我们引用资源时会这样写：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Button</span> <span class="n">btn</span> <span class="o">=</span> <span class="o">(</span><span class="n">Button</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">btn1</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>而在这种方式引入的依赖库中一般会通过上述的自有方法来获取资源 ID</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Button</span> <span class="n">btn</span> <span class="o">=</span> <span class="o">(</span><span class="n">Button</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">getResId</span><span class="o">(</span><span class="s">&quot;id&quot;</span><span class="o">,</span> <span class="s">&quot;btn1&quot;</span><span class="o">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>【集成方式3】通过二次打包的方式集成</h3>
+
+<p>其实说到针对不同渠道不同第三方 SDK 依赖出包的问题，很多同学首先想到的就是使用如  <a href="http://www.anysdk.com">AnySDK</a> 这样的一整套解决方案。使用这种方案你只需要在你的主项目中薄薄的接入一层 AnySDK 的中间层 SDK 依赖，然后将你生成的 apk 包交给 AnySDK 的客户端，通过 UI 界面选择好你需要的第三方 SDK 依赖，然后等待进度条走完之后一个复合你要求的渠道包就生成出来了。</p>
+
+<p>可是在你享受这种方便的时候是否思考过它是<strong>如何实现</strong>的呢？</p>
+
+<p>当你依赖的第三方 SDK 并不在 AnySDK 这种解决方案提供商的支持之列，而支持计划遥遥无期的时候，当你生成的渠道包发生问题去寻求 AnySDK 的反馈而没有响应时，你是否咬牙切齿的想要自己也搞这么一套方便的解决方案把一切<strong>掌控在自己手中</strong>呢？</p>
+
+<p>这里就告诉你它们所使用的是什么样的<strong>黑科技</strong>。</p>
+
+<p>其实了解了 Android apk 的打包原理后，只要稍稍想一想就会明白所谓的黑科技也并不是什么复杂的东西，无非是：</p>
+
+<ul>
+<li><p>建立统一的接口规范，将各个第三方 SDK 的调用方式统一化、规范化。</p></li>
+<li><p>将各个第三方 SDK 按照统一接口规范做一次二次封装，使其暴露的对外调用接口统一。</p></li>
+<li><p>只将薄薄的一层统一调用接入标准工程项目中，排除了各种第三方依赖。</p></li>
+<li><p>通过二次打包的方式将所需的各个第三方 SDK 打进 apk 包。</p></li>
+<li><p>最后运行时通过动态加载技术经过统一的接口调用各个第三方 SDK。</p></li>
+</ul>
+
+
+<p>这里的重点在于二次打包。当然不排除各家类 AnySDK 解决方案提供商有各家的方式方法，不过大概的原理是相通的。</p>
+
+<ul>
+<li><p>用类似 <a href="https://ibotpeaches.github.io/Apktool/">apktool</a> 这样的工具将原 apk 包解包。</p></li>
+<li><p>通过 <code>aapk</code> 工具将各个第三方 SDK 中的资源合并，重新生成 R.java 并编译成 R.class 文件替换原包中的 R.class 文件，然后根据各个第三方 SDK 的包路径不同对应生成各个包下的 R.java 文件。</p></li>
+<li><p>将新生成的各个 class 文件和各个第三方 SDK 中的依赖 jar 包和原 apk 包中的 class 文件一起重新编译成 <code>classes.dex</code> 文件。</p></li>
+<li><p>最后重新打包成新的 apk 然后重新签名一次即可。</p></li>
+</ul>
+
+
+<h2>最后的广告时间</h2>
+
+<p><a href="https://github.com/leenjewel/mysdk">MySDK</a> 项目就是我仿照 AnySDK 这样的解决方案实现的一套框架。虽然还没有完工，但基本该有的东西都有了：</p>
+
+<ul>
+<li><p>统一接口的中间层 C++、Java、Objective-C、Cocos2d-x Lua 语言层面的调用支持。</p></li>
+<li><p>基于 Web 和基于命令行的二次打包工具</p></li>
+</ul>
+
+
+<p>有兴趣的同学可以 clone 下来玩玩。附上简单玩法：</p>
+
+<p>提前部署好你的 Android 环境。Android SDK 一定要有，并且要定义一个环境变量 <code>$ANDROID_SDK_ROOT</code> 指明 Android SDK 的位置。JDK 要安装这个更不用说了，还有 Python 环境。</p>
+
+<p>Web 二次打包工具基于 Python 的 <a href="http://www.tornadoweb.org">Tornado Web Framework</a> 所以请先自行安装。然后：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">$git</span> <span class="n">clone</span> <span class="n">git</span><span class="nd">@github.com</span><span class="o">:</span><span class="n">leenjewel</span><span class="o">/</span><span class="n">mysdk</span><span class="o">.</span><span class="na">git</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">$cd</span> <span class="n">mysdk</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">$cd</span> <span class="n">apk</span><span class="o">.</span><span class="na">builder</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">$python</span> <span class="n">setup</span><span class="o">.</span><span class="na">py</span> <span class="n">install</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">$python</span> <span class="n">mysdk</span><span class="o">.</span><span class="na">py</span> <span class="n">start</span><span class="o">-</span><span class="n">server</span> <span class="err">\</span>
+</span><span class='line'>    <span class="o">--</span><span class="n">server</span><span class="o">-</span><span class="n">config</span> <span class="o">./../</span><span class="n">example</span><span class="o">/</span><span class="n">apk_build_test</span><span class="o">/</span><span class="n">mysdk_web_server</span><span class="o">/</span><span class="n">settings</span><span class="o">.</span><span class="na">py</span> <span class="err">\</span>
+</span><span class='line'>    <span class="o">--</span><span class="n">with</span><span class="o">-</span><span class="n">port</span> <span class="mi">8080</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果命令执行成功的话，直接打开浏览器访问 <a href="http://localhost:8080/index">http://localhost:8080/index</a> 就可以看到二次打包工具的 Web UI 界面了。</p>
+
+<p>先新建一个工作空间(workspace)，点击 <code>New Workspace</code> 按钮新建好工作空间后继续点击 <code>Go To Workspace</code> 按钮进入新建好的工作空间。</p>
+
+<p>在新建好的工作空间中点击 <code>New Project</code> 按钮新建一个二次打包项目。这里需要注意的是：</p>
+
+<ul>
+<li><p>APK File 文件选择 <code>example/apk_build_test/MySDKAPPExample.apk</code></p></li>
+<li><p>APK Package Name 填写 <code>com.leenjewel.mysdk.appexample</code></p></li>
+<li><p>Keystore File 文件选择 <code>example/android/MySDKAPPExample/keystore</code> 文件</p></li>
+<li><p>Store Password 和 Key Password 都填写 <code>com.leenjewel.mysdk</code></p></li>
+<li><p>Alias 填写 mysdk</p></li>
+<li><p><code>aexamplesdk</code> 点击 <code>Add SDK</code> 按钮添加，<code>metadata_val_1</code> 的值随便填写，这表示二次打包将这个名叫 <code>aexamplesdk</code> 的第三方 SDK 加入到原包中。</p></li>
+</ul>
+
+
+<p>接着点击 <code>Create Project</code> 按钮完成二次打包项目的创建。</p>
+
+<p>最后点击 <code>Build Project</code> 按钮进入到二次打包界面，再次确认项目配置填写无误的话直接点击二次打包界面里的 <code>Build Project</code> 按钮就开始二次打包操作了。</p>
+
+<p>祝玩的愉快。如遇到问题欢迎和我讨论。</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-12-02T18:29:48+08:00" pubdate data-updated="true">2015年12月2日</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/android/'>android</a>
+
+
+</div>
+	
+	<div class="comments"><a href="#disqus_thread">Comments</a></div>
+	
+	<div>
+		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
+		<form action="https://shenghuo.alipay.com/send/payment/fill.htm" method="post" target="_blank" accept-charset="GBK" id="alipayForm">
+			<input name="optEmail" type="hidden" value="leenjewel@gmail.com" />
+			<input name="payAmount" type="hidden" value="1.00" />
+			<input id="title" name="title" type="hidden" value="捐赠给 leenjewel.github.io" />
+			<input name="memo" type="hidden" value="文章写的不错，我来捐赠鼓励的！" />
+			<input name="pay" type="image" src="https://img.alipay.com/sys/personalprod/style/mc/btn-index.png" width="150" height="40">
+		</form>
+	</div>
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		
+		
+	</div>
+	
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2015
+
+    leenjewel
+
+<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1256882796'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s95.cnzz.com/z_stat.php%3Fid%3D1256882796%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script></footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'leenjewelgithubio';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://leenjewel.github.io/blog/2015/12/02/ye-shuo-android-apk-da-bao/';
+        var disqus_url = 'http://leenjewel.github.io/blog/2015/12/02/ye-shuo-android-apk-da-bao/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//go.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-52061917-1']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- leenjewel.github.io -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-7743616000257723"
+     data-ad-slot="4032598696"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</body>
+</html>
