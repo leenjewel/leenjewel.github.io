@@ -26,13 +26,13 @@ categories: Linux
 
 - 2、用 `diskutil unmountDisk` 命令卸载掉已挂载的 SD 卡，例如你的 SD 卡的磁盘 ID 是 `disk4` 那么就运行：
 
-- ```
+```
 diskutil unmountDisk /dev/disk4
 ```
 
 - 3、用 `dd` 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 `disk4` 那么就运行：
 
-- ```
+```
 sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4
 ```
 
