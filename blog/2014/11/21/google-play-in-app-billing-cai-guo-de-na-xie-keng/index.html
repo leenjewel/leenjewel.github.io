@@ -174,7 +174,7 @@
 </span><span class='line'>
 </span><span class='line'><span class="nv">$public_key_handle</span> <span class="o">=</span> <span class="nb">openssl_get_publickey</span><span class="p">(</span><span class="nv">$public_key</span><span class="p">);</span>
 </span><span class='line'>
-</span><span class='line'><span class="nv">$result</span> <span class="o">=</span> <span class="nb">openssl_verify</span><span class="p">(</span><span class="nv">$inapp_purchase_data</span><span class="p">,</span> <span class="nb">base64_decode</span><span class="p">(</span><span class="nv">$inapp_data_signature</span><span class="p">,</span> <span class="nv">$public_key_handle</span><span class="p">,</span> <span class="nx">OPENSSL_ALGO_SHA1</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$result</span> <span class="o">=</span> <span class="nb">openssl_verify</span><span class="p">(</span><span class="nv">$inapp_purchase_data</span><span class="p">,</span> <span class="nb">base64_decode</span><span class="p">(</span><span class="nv">$inapp_data_signature</span><span class="p">),</span> <span class="nv">$public_key_handle</span><span class="p">,</span> <span class="nx">OPENSSL_ALGO_SHA1</span><span class="p">);</span>
 </span><span class='line'>
 </span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="mi">1</span> <span class="o">===</span> <span class="nv">$result</span><span class="p">)</span> <span class="p">{</span>
 </span><span class='line'>    <span class="c1">// 支付验证成功！</span>

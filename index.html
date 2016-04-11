@@ -7,7 +7,7 @@
 	<meta name="author" content="leenjewel">
 
 	
-	<meta name="description" content="我们在开发 Android 应用程序的时候一般都只需要使用 Eclipse 或是 Android Studio 这样的 IDE 编写好业务逻辑，最终由这些开发工具来协助我们将代码打包生成最终可以在设备上运行的 APK 包。正因为有这些集成度很高的开发工具，我们很少能够接触到 Android &hellip;">
+	<meta name="description" content="第一块树莓派的板子还是 2012 年 10 月份入手的，那时候还是 Mod B，700 MHz 的 CPU 和 512 MB 内存。现在已经是树莓派 3 了，时间如白驹过隙啊。当时入手了一块，后来有个朋友想要在家里搞 NAS，忽悠他用树莓派搞，他也买了一块，后来他放弃了， &hellip;">
 	
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -84,6 +84,308 @@
 		
 	
 	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/04/11/raspberry-pi-ru-men/">
+		
+			Raspberry Pi 入门</a>
+	</h2>
+	<div class="entry-content">
+		<p>第一块树莓派的板子还是 2012 年 10 月份入手的，那时候还是 Mod B，700 MHz 的 CPU 和 512 MB 内存。现在已经是树莓派 3 了，时间如白驹过隙啊。当时入手了一块，后来有个朋友想要在家里搞 NAS，忽悠他用树莓派搞，他也买了一块，后来他放弃了，把手里的那块树莓派送给我了，于是我就有了两块树莓派的板子。</p>
+
+<p>其实我也等于是半放弃的状态。用树莓派刷过 <a href="https://kodi.tv/">XBMC</a>(才发现这货也改名叫 Kodi 了，时间如白驹过隙啊) 来当电视盒子玩耍，后来还是买了小米盒子。再后来刷上 Raspbian 系统链接上硬盘准备做远程 BT 下载机，后来买了极路由发现这货就可以满足需求。再再后来闺女出生，拿树莓派接上罗技的摄像头来玩远程监控，然后，就没有然后了，放在书柜里开始吃灰了。</p>
+
+<p>最近想做一些 Web 相关的开发，又把树莓派从书柜里拿了出来，上电后发现能用，于是又折腾起来。也是很久没关注树莓派的发展了，去官网一看，变化还挺大的。晚上花了两三个小时从重新刷系统到布置好整个的运行环境，准备把折腾过程简单总结一下，做个入门教程。</p>
+
+<h2>可能不大适合纯小白入门</h2>
+
+<p>如果你是一名刚刚才接触树莓派的新手，那么这个教程可能并不适合你，主要原因是我不需要图形界面，只通过 SSH + 命令行的方式进行操作。而如果你已经是树莓派圈子的“小鸟”、“老鸟”、“大牛”那么这篇你读来可能也没什么意思，呵呵。</p>
+
+<h2>刷入 Raspbain 系统</h2>
+
+<p>安装方式都有些变化了，有个叫做 <a href="https://www.raspberrypi.org/help/noobs-setup/">NOOBS</a> 的东东成了最佳的安装配置工具。大概了解了一下，主要是图形化安装，集成了众多可以用于树莓派的操作系统，操作简便。不过这个完全不复合我的需求，我不需要图形界面，所以我还是用了传统的镜像刷入方式来弄。</p>
+
+<p>系统选择了最官方的 <a href="https://www.raspberrypi.org/downloads/raspbian/">Raspbian</a> 不过用的是 Lite 版本，还是因为不需要图形界面嘛，所以就不要桌面支持了。下载的是个 ZIP 包，解压之后是个 img 镜像，我是 Mac OS X ，直接用 diskutil + dd 命令将系统刷入 SD 卡，这一步<a href="https://www.raspberrypi.org/documentation/installation/installing-images/mac.md">树莓派官方网站的文档</a>写的很清楚，操作也简单。</p>
+
+<ul>
+<li><p>1、将 SD 卡插入电脑，运行 <code>diskutil list</code> 显示出目前已挂在的磁盘。这里假设你的 SD 卡的磁盘 ID 是 <code>disk4</code> 即 <code>/dev/disk4</code></p></li>
+<li><p>2、用 <code>diskutil unmountDisk</code> 命令卸载掉已挂载的 SD 卡，例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</p></li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>diskutil unmountDisk /dev/disk4</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>3、用 <code>dd</code> 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4</span></code></pre></td></tr></table></div></figure>
+
+
+<p>稍等片刻 Raspbian 系统就成功刷入 SD 卡了。接下来插上网线，上电开机。</p>
+
+<h2>配置 Raspbain 系统</h2>
+
+<p>我家里的路由器是<a href="http://www.hiwifi.com/j3-view">极路由</a>，其实大多路由器都可以，登录到你的路由器管理界面找到接入到网络的树莓派的内网 IP 地址，然后就可以通过 SSH 来登录了：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ssh pi@192.168.xxx.xxx</span></code></pre></td></tr></table></div></figure>
+
+
+<p>默认密码是 <code>raspberry</code>。如果你成功登录了树莓派那么就可以开始进行配置了，配置操作也方便的很，一个命令搞定：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo raspi-config</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个命令会显示一个配置菜单，有不少项目需要配置，我一个一个说。</p>
+
+<h3>1. Expand Filesystem</h3>
+
+<p>这个选项可以让你刚刚刷入的 Raspbian 系统使用 SD 卡上的全部空间。第一步要做这个是因为这个操作需要重启后才能生效。做完后重启树莓派然后通过 SSH 重新登录。如果你的路由器支持，最好设置一下 <a href="https://zh.wikipedia.org/wiki/%E5%8A%A8%E6%80%81%E4%B8%BB%E6%9C%BA%E8%AE%BE%E7%BD%AE%E5%8D%8F%E8%AE%AE">DHCP</a> 给树莓派分配一个固定的 IP 地址。</p>
+
+<h3>2. Change User Password</h3>
+
+<p>修改当前用户 pi 的密码，这个你现在做也可以，之后用命令 <code>password pi</code> 来做也成，总之建议还是改一下密码，毕竟默认密码 <code>raspberry</code> 是众所周知的。</p>
+
+<h3>3. Boot Options</h3>
+
+<p>启动选项，说白了就是开机后是默认进入图形桌面还是进入命令行，我是没有图形桌面的，所以确认选择：</p>
+
+<blockquote><p>B1 Console    Text console, requiring user to login</p></blockquote>
+
+<h3>4. Internationalisation Optins</h3>
+
+<p>这个选项下面需要修改两个子项，<code>locale</code> 和 <code>timezone</code>。</p>
+
+<p><code>locale</code> 我选择了</p>
+
+<blockquote><p><code>en_GB.UTF-8 UTF-8</code></p>
+
+<p><code>en_US ISO-8859-1</code></p>
+
+<p><code>en_US.UTF-8 UTF-8</code></p>
+
+<p><code>zh_CN.UTF-8 UTF-8</code></p>
+
+<p><code>zh_CN GB2312</code></p>
+
+<p><code>zh_CN.GB18030 GB18030</code></p></blockquote>
+
+<p>默认本地化选项我选择了 <code>en_US.UTF-8</code></p>
+
+<p>本地化选项你也完全可以通过编辑 <code>/etc/locale.gen</code> 文件来配置，就是将文件中上述本地化项目的注释去掉即可。如果你通过 <code>/etc/locale.gen</code> 来修改的话，修改完毕后要记得使用命令来更新本地化设置</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo locale-gen</span></code></pre></td></tr></table></div></figure>
+
+
+<p>另外在通过 SSH 登录后你很有可能收到这样的警告：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>-bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8)
+</span><span class='line'>-bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8)
+</span><span class='line'>-bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8)</span></code></pre></td></tr></table></div></figure>
+
+
+<p>不要着急，编辑 <code>/etc/locale.conf</code> 文件，做如下设置</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>LANG=en_US.UTF-8
+</span><span class='line'>LC_ALL=en_US.UTF-8</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>timezone</code> 时区设置没什么可说的，根据你所在地区做出选择，我选择的是 <code>Asia/Shanghai</code></p>
+
+<h3>5. Add to Rastrack</h3>
+
+<p>这个挺有意思。如果你对隐私什么的没有额外的洁癖，可以打开这个选项。它会将你的树莓派的地理位置和其他全世界使用树莓派的小伙伴们标记在 Google Map 上面，并可以通过 <a href="http://rastrack.co.uk/">rastrack.co.uk</a> 这个网站查看。</p>
+
+<h2>使用无线网卡</h2>
+
+<p>网线大大限制了树莓派的便捷性，给树莓派配上个 USB 的无线网卡就舒服多了。对于无线网卡的选择建议你千万不要盲目，看一下树莓派的<a href="http://elinux.org/RPi_VerifiedPeripherals#USB_Wi-Fi_Adapters">硬件兼容列表</a>再下单也不迟，否则买到不兼容的硬件就呵呵了（我第一次给树莓派购买的 SD 卡就因为不兼容而呵呵了）。我使用的是 <a href="http://item.jd.com/509932.html">EDUP EP-N8508GS黄金版 迷你USB无线网卡</a></p>
+
+<p>插上你购买的 USB 无线网卡，通过运行命令 <code>sudo lsusb</code> 来查看，如果你看到</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Bus 001 Device 004: ID 0bda:8176 Realtek Semiconductor Corp. RTL8188CUS 802.11n WLAN Adapter
+</span><span class='line'>Bus 001 Device 003: ID 0424:ec00 Standard Microsystems Corp. SMSC9512/9514 Fast Ethernet Adapter
+</span><span class='line'>Bus 001 Device 002: ID 0424:9512 Standard Microsystems Corp. LAN9500 Ethernet 10/100 Adapter / SMSC9512/9514 Hub
+</span><span class='line'>Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub</span></code></pre></td></tr></table></div></figure>
+
+
+<p>能找到标有 <code>802.11n WLAN Adapter</code> 字样，或者运行命令</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ifconfig -a</span></code></pre></td></tr></table></div></figure>
+
+
+<p>能看到标有 <code>wlan0</code> 字样，那么恭喜你，说明你的 USB 无线网卡是可用的了。下面我们在做配置。首先是 <code>/etc/network/interfaces</code> 文件</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>auto lo
+</span><span class='line'>iface lo inet loopback
+</span><span class='line'>
+</span><span class='line'>auto eth0
+</span><span class='line'>iface eth0 inet dhcp
+</span><span class='line'>
+</span><span class='line'>auto wlan0
+</span><span class='line'>allow-hotplug wlan0
+</span><span class='line'>iface wlan0 inet dhcp
+</span><span class='line'>wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+</span><span class='line'>iface default inet dhcp</span></code></pre></td></tr></table></div></figure>
+
+
+<p>由于我的设备的内网 IP 都是路由器通过 DHCP 分配的，如果你的不是，那么配置文件的内容是有所不同的。接下来是 <code>/etc/wpa_supplicant/wpa_supplicant.conf</code> 文件，这个文件主要是配置要接入的 wifi 的帐号密码。如果你不确定你要接入的 wifi 的 ssid ，可以使用下面这个命令叫无线网卡扫描一下身边的 wifi 热点</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo iwlist wlan0 scan</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后配置你的 wifi 接入帐号配置</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+</span><span class='line'>update_config=1
+</span><span class='line'>
+</span><span class='line'>network={
+</span><span class='line'>  ssid="wifi-001"
+</span><span class='line'>  key_mgmt=WPA-PSK
+</span><span class='line'>  psk="wifi-001-password"
+</span><span class='line'>}
+</span><span class='line'>
+</span><span class='line'>network={
+</span><span class='line'>  ssid="wifi-002"
+</span><span class='line'>  key_mgmt=WPA-PSK
+</span><span class='line'>  psk="wifi-002-password"
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上述 wifi 使用的是 WPA/WPA2 加密，这里有几点需要注意的</p>
+
+<ul>
+<li><ol>
+<li>如果你的 wifi 没有密码，那么 <code>key_mgmt=NONE</code> 并去掉 <code>psk</code></li>
+</ol>
+</li>
+<li><ol>
+<li>如果你的 wifi 是 WEP 加密，那么 <code>key_mgmt=NONE</code> 并去掉 <code>psk</code> 加上 <code>wep_key0="wifi-wep-password"</code></li>
+</ol>
+</li>
+</ul>
+
+
+<p>配置完成后拔掉网线，然后重启你的树莓派，再进入你的路由器管理后台，如果能看到你的树莓派接入到网络了，那么恭喜你，你的树莓派已经拜托了网线的束缚。</p>
+
+<h2>关闭无线网卡的休眠功能</h2>
+
+<p>在使用的过程中我发现经常出现 SSH 无法链接到树莓派，过一会儿又可以链接；树莓派的 HTTP 80 端口经常莫名其妙的就无法访问，然后过一会儿就可以访问。一开始我以为是树莓派不稳定，可是每次无法链接时我去查看路由器后台发现树莓派的网络接入都是正常的，直到后来我才明白，无线网卡默认是可以休眠的。通过下面的命令检查你的无线网卡是否也是自动休眠的：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>cat /sys/module/8192cu/parameters/rtw_power_mgnt</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果命令返回值为 <code>1</code> 那么你的无线网卡也是自动休眠的，如果返回的是 <code>0</code> 则没有开启休眠功能。如果是 <code>1</code> 那么你需要手动关闭无线网卡的休眠功能，具体方式是编辑文件 <code>/etc/modprobe.d/8192cu.conf</code>（如果文件不存在则新建）加入如下配置项目</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'># Disable power saving
+</span><span class='line'>options 8192cu rtw_power_mgnt=0</span></code></pre></td></tr></table></div></figure>
+
+
+<p>重启一下树莓派，然后再次运行 <code>cat /sys/module/8192cu/parameters/rtw_power_mgnt</code> 命令，如果返回值变为了 <code>0</code> 那么你的无线网网卡的休眠功能就被关闭了。这下树莓派的链接就稳定了。</p>
+
+<h2>路由器的端口转发和动态域名解析</h2>
+
+<p>如果你不安于只在内网环境下摆弄树莓派，想要像我一样把树莓派放在家里，到了公司照样可以愉快的玩耍你的树莓派，那么你就需要做端口转发和动态域名解析。当然要能做到这两点，你需要满足</p>
+
+<ul>
+<li><p>1、 你的树莓派接入的网络有公网 IP</p></li>
+<li><p>2、 你的树莓派接入的路由器支持端口转发，当然能支持动态域名解析就更完美了。</p></li>
+</ul>
+
+
+<p>一般的一级宽带运营商都可以满足第一条，但是有些小的第三方宽带运营商是不行的。像端口转发这种功能一般高级一点儿的路由器都是可以的，或是像小米路由、极路由这种性价比比较不错的路由器也是有的。具体的操作看自己路由器的支持和设置了，这里就不详述了。</p>
+
+<p>到此树莓派的运行环境基本就搭建完毕了，至于接下来要怎么折腾，怎么玩耍，那就看大家的脑洞有多大了，最后祝大家玩的愉快。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-04-11T15:12:41+08:00" pubdate data-updated="true">2016年4月11日</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/linux/'>Linux</a>
+
+
+</div>
+	
+	<div class="comments"><a href="/blog/2016/04/11/raspberry-pi-ru-men/#disqus_thread">Comments</a></div>
+	
+	<div>
+		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
+		<form action="https://shenghuo.alipay.com/send/payment/fill.htm" method="post" target="_blank" accept-charset="GBK" id="alipayForm">
+			<input name="optEmail" type="hidden" value="leenjewel@gmail.com" />
+			<input name="payAmount" type="hidden" value="1.00" />
+			<input id="title" name="title" type="hidden" value="捐赠给 leenjewel.github.io" />
+			<input name="memo" type="hidden" value="文章写的不错，我来捐赠鼓励的！" />
+			<input name="pay" type="image" src="https://img.alipay.com/sys/personalprod/style/mc/btn-index.png" width="150" height="40">
+		</form>
+	</div>
+</div>
+</article>
 
 
     <article class="post">
@@ -4411,7 +4713,7 @@
 </span><span class='line'>
 </span><span class='line'><span class="nv">$public_key_handle</span> <span class="o">=</span> <span class="nb">openssl_get_publickey</span><span class="p">(</span><span class="nv">$public_key</span><span class="p">);</span>
 </span><span class='line'>
-</span><span class='line'><span class="nv">$result</span> <span class="o">=</span> <span class="nb">openssl_verify</span><span class="p">(</span><span class="nv">$inapp_purchase_data</span><span class="p">,</span> <span class="nb">base64_decode</span><span class="p">(</span><span class="nv">$inapp_data_signature</span><span class="p">,</span> <span class="nv">$public_key_handle</span><span class="p">,</span> <span class="nx">OPENSSL_ALGO_SHA1</span><span class="p">);</span>
+</span><span class='line'><span class="nv">$result</span> <span class="o">=</span> <span class="nb">openssl_verify</span><span class="p">(</span><span class="nv">$inapp_purchase_data</span><span class="p">,</span> <span class="nb">base64_decode</span><span class="p">(</span><span class="nv">$inapp_data_signature</span><span class="p">),</span> <span class="nv">$public_key_handle</span><span class="p">,</span> <span class="nx">OPENSSL_ALGO_SHA1</span><span class="p">);</span>
 </span><span class='line'>
 </span><span class='line'><span class="k">if</span> <span class="p">(</span><span class="mi">1</span> <span class="o">===</span> <span class="nv">$result</span><span class="p">)</span> <span class="p">{</span>
 </span><span class='line'>    <span class="c1">// 支付验证成功！</span>
@@ -5201,237 +5503,10 @@
 </div>
 </article>
 
-
-    <article class="post">
-	<h2 class="title">
-		
-		<a href="/blog/2014/06/19/ye-shuo-yong-octopress-zai-github-shang-jian-zhan/">
-		
-			也说用 Octopress 在 Github 上建站</a>
-	</h2>
-	<div class="entry-content">
-		<p>谈用 Octopress 在 Github 上建站的教程在网上非常非常多，比如下面这两篇写的就很好：</p>
-
-<p><a href="http://jackycode.github.io/blog/2014/02/23/record/">《记录：Octopress建站之旅》</a></p>
-
-<p><a href="http://sumnous.github.io/blog/2014/05/11/octopress-build-blog-on-github/">《Octopress Build Blog on Github 个人建站实录》</a></p>
-
-<p>我基本上就是看着上面这两篇文章把自己的 Blog 给建立起来的。所以在这里我不想“重复造轮子”，我是想谈谈我在操作过程中遇到的“坑”和我是如何解决的。</p>
-
-<h3>0、我的环境</h3>
-
-<p>我是在 Mac 环境下操作的，系统版本是 10.9，其他环境是否也会遇到我下面所说的问题我不太确定。</p>
-
-<h3>1、Ruby 的版本</h3>
-
-<p>Mac OS X 10.9 默认安装的 Ruby 版本是 2.0.0 完全符合要求。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ruby --version</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这里我想说的是一开始我是尝试在 CentOS 下面进行操作的，CentOS 下 Ruby 的版本是 1.8.4 ，而 Octopress 需求的 Ruby版本号是 1.9.6 以上，否则会在执行</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake generate</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这步时报错。所以一定要提前注意一下自己环境的 Ruby 版本。</p>
-
-<h3>2、Gem 源</h3>
-
-<p>Ruby Gem 默认的源是：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>https://rubygems.org/</span></code></pre></td></tr></table></div></figure>
-
-
-<p>由于一些“你懂的”的国内网络原因导致从这个源获取东西的时候会失败。特别是你在操作到如下这部的时候：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gem install bundler</span></code></pre></td></tr></table></div></figure>
-
-
-<p>如果遇到这样的网络问题，你可以考虑更换国内淘宝提供的源，具体的更换方法可直接参考淘宝源上写的<a href="https://ruby.taobao.org">教程</a>。或者直接按照下面的步骤操作：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$ gem sources --remove https://rubygems.org/
-</span><span class='line'>$ gem sources -a https://ruby.taobao.org/
-</span><span class='line'>$ gem sources -l
-</span><span class='line'>*** CURRENT SOURCES ***
-</span><span class='line'>
-</span><span class='line'>https://ruby.taobao.org
-</span><span class='line'># 请确保只有 ruby.taobao.org</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>3、Rake 的版本</h3>
-
-<p>在 Mac OS X 10.9 环境下查看 rake 的版本</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake --version
-</span><span class='line'>rake, version 0.9.6</span></code></pre></td></tr></table></div></figure>
-
-
-<p>发现版本是 0.9.6 但是在 octopress 目录下打开 Gemfile 文件</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>vim Gemfile</span></code></pre></td></tr></table></div></figure>
-
-
-<p>发现里面配置的内容是这个样子的</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>source "https://rubygems.org"
-</span><span class='line'>
-</span><span class='line'>group :development do
-</span><span class='line'>  gem 'rake', '~&gt; 0.9'
-</span><span class='line'>  gem 'jekyll', '~&gt; 0.12'
-</span><span class='line'>  gem 'rdiscount', '~&gt; 2.0.7'
-</span><span class='line'>  gem 'pygments.rb', '~&gt; 0.3.4'
-</span><span class='line'>  gem 'RedCloth', '~&gt; 4.2.9'
-</span><span class='line'>  gem 'haml', '~&gt; 3.1.7'
-</span><span class='line'>  gem 'compass', '~&gt; 0.12.2'
-</span><span class='line'>  gem 'sass', '~&gt; 3.2'
-</span><span class='line'>  gem 'sass-globbing', '~&gt; 1.0.0'
-</span><span class='line'>  gem 'rubypants', '~&gt; 0.2.0'
-</span><span class='line'>  gem 'rb-fsevent', '~&gt; 0.9'
-</span><span class='line'>  gem 'stringex', '~&gt; 1.4.0'
-</span><span class='line'>  gem 'liquid', '~&gt; 2.3.0'
-</span><span class='line'>  gem 'directory_watcher', '1.4.1'
-</span><span class='line'>end
-</span><span class='line'>
-</span><span class='line'>gem 'sinatra', '~&gt; 1.4.2'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这导致在执行 rake 命令的时候会报错</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>Gem::LoadError: You have already activated rake 0.9.6, but your Gemfile requires rake 0.9......</span></code></pre></td></tr></table></div></figure>
-
-
-<p>于是我把 Gemfile 文件中的 gem &lsquo;rake&rsquo;, &lsquo;~> 0.9&rsquo; 修改成了 gem &lsquo;rake&rsquo;, &lsquo;~> 0.9.6&rsquo; 就没有问题了。</p>
-
-<h3>4、zsh</h3>
-
-<p>我的命令行环境是 zsh 在安装站点主题的时候执行下面这个命令：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake install['whitelake']</span></code></pre></td></tr></table></div></figure>
-
-
-<p>会报错 zsh： no matches found: install[&lsquo;whitelake&rsquo;] 这个解决起来到容易，把命令写成下面这样：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake 'install["whitelake"]'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>就不会有问题，但是在发布新 Blog 的时候会有个“坑”，因为发布新 Blog 时候用到的命令：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake new_post["title"]</span></code></pre></td></tr></table></div></figure>
-
-
-<p>在 zsh 下也会报同样的错，所以也要把命令修改成：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>rake 'new_post["title"]'</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这个时候你需要特别注意了，在执行上面的命令成功生成的 markdown 文件中 title 里的内容是错的，因为我们在输入命令时多用了一对引号，所以会导致 markdown 文件中的 title 变成错误的样子：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>title: ""title""</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这时如果执行 rake generate 命令时由于 markdown 文件的 title 格式错误会导致命令执行失败，所以需要手动将 markdown 文件中的 title 的多余引号去掉。如果你不是用 zsh 或者敲命令是没有带那对多余的引号就不会碰上这个问题。</p>
-
-<h3>5、其他</h3>
-
-<p>上面说的都是我在操作过程中遇到的一些主要问题。剩下还有两点提醒：</p>
-
-<h5>1.代码部署到 GitHub 之后请耐心等几分钟</h5>
-
-<p>代码部署到 GitHub 之后，马上去访问 xxx.github.io 可能看到的是 404 页面，这时候不要着急，不要瞎折腾（血的教训），耐心登上几分钟再刷新一下页面就可以看到自己的站点了。</p>
-
-<h5>2.部署完毕后的多台设备同时更新网站问题</h5>
-
-<p>你可能也会遇到这个问题。例如像我在公司的电脑上部署好了 Octopress 站点环境，甚至还迫不及待的发了新的 Blog 或是网站内容上去，这时候你会需要在家里的台式机、自己的笔记本上也可以部署好同样的环境，然后在不同的设备上顺利的更新自己站点的内容，要如何做呢？去读读下面这个网站上的内容，这个问题会迎刃而解的。</p>
-
-<p><a href="http://blog.zerosharp.com/clone-your-octopress-to-blog-from-two-places/">《Clone Your Octopress to Blog From Two Places》</a></p>
-
-<p>最后祝大家玩的愉快！</p>
-
-		
-		
-	</div>
-
-
-<div class="meta">
-	<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-06-19T14:15:15+08:00" pubdate data-updated="true">2014年6月19日</time></div>
-	<div class="tags">
-
-
-	<a class='category' href='/blog/categories/web/'>web</a>
-
-
-</div>
-	
-	<div class="comments"><a href="/blog/2014/06/19/ye-shuo-yong-octopress-zai-github-shang-jian-zhan/#disqus_thread">Comments</a></div>
-	
-	<div>
-		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
-		<form action="https://shenghuo.alipay.com/send/payment/fill.htm" method="post" target="_blank" accept-charset="GBK" id="alipayForm">
-			<input name="optEmail" type="hidden" value="leenjewel@gmail.com" />
-			<input name="payAmount" type="hidden" value="1.00" />
-			<input id="title" name="title" type="hidden" value="捐赠给 leenjewel.github.io" />
-			<input name="memo" type="hidden" value="文章写的不错，我来捐赠鼓励的！" />
-			<input name="pay" type="image" src="https://img.alipay.com/sys/personalprod/style/mc/btn-index.png" width="150" height="40">
-		</form>
-	</div>
-</div>
-</article>
-
 <nav id="pagenavi">
     
+    
+        <a href="/posts//blog/page/2/" class="next">下一页</a>
     
     <div class="center"><a href="/blog/archives">阅读全部日志</a></div>
 </nav>
