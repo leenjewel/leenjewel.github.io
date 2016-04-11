@@ -76,7 +76,7 @@ $public_key = "-----BEGIN PUBLIC KEY-----\n" . chunk_split($google_public_key, 6
 
 $public_key_handle = openssl_get_publickey($public_key);
 
-$result = openssl_verify($inapp_purchase_data, base64_decode($inapp_data_signature, $public_key_handle, OPENSSL_ALGO_SHA1);
+$result = openssl_verify($inapp_purchase_data, base64_decode($inapp_data_signature), $public_key_handle, OPENSSL_ALGO_SHA1);
 
 if (1 === $result) {
     // 支付验证成功！

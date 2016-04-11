@@ -1,0 +1,212 @@
+---
+layout: post
+title: "Raspberry Pi 入门"
+date: 2016-04-11 15:12:41 +0800
+comments: true
+categories: Linux
+---
+
+第一块树莓派的板子还是 2012 年 10 月份入手的，那时候还是 Mod B，700 MHz 的 CPU 和 512 MB 内存。现在已经是树莓派 3 了，时间如白驹过隙啊。当时入手了一块，后来有个朋友想要在家里搞 NAS，忽悠他用树莓派搞，他也买了一块，后来他放弃了，把手里的那块树莓派送给我了，于是我就有了两块树莓派的板子。
+
+其实我也等于是半放弃的状态。用树莓派刷过 [XBMC](https://kodi.tv/)(才发现这货也改名叫 Kodi 了，时间如白驹过隙啊) 来当电视盒子玩耍，后来还是买了小米盒子。再后来刷上 Raspbian 系统链接上硬盘准备做远程 BT 下载机，后来买了极路由发现这货就可以满足需求。再再后来闺女出生，拿树莓派接上罗技的摄像头来玩远程监控，然后，就没有然后了，放在书柜里开始吃灰了。
+
+最近想做一些 Web 相关的开发，又把树莓派从书柜里拿了出来，上电后发现能用，于是又折腾起来。也是很久没关注树莓派的发展了，去官网一看，变化还挺大的。晚上花了两三个小时从重新刷系统到布置好整个的运行环境，准备把折腾过程简单总结一下，做个入门教程。
+
+##可能不大适合纯小白入门
+
+如果你是一名刚刚才接触树莓派的新手，那么这个教程可能并不适合你，主要原因是我不需要图形界面，只通过 SSH + 命令行的方式进行操作。而如果你已经是树莓派圈子的“小鸟”、“老鸟”、“大牛”那么这篇你读来可能也没什么意思，呵呵。
+
+##刷入 Raspbain 系统
+
+安装方式都有些变化了，有个叫做 [NOOBS](https://www.raspberrypi.org/help/noobs-setup/) 的东东成了最佳的安装配置工具。大概了解了一下，主要是图形化安装，集成了众多可以用于树莓派的操作系统，操作简便。不过这个完全不复合我的需求，我不需要图形界面，所以我还是用了传统的镜像刷入方式来弄。
+
+系统选择了最官方的 [Raspbian](https://www.raspberrypi.org/downloads/raspbian/) 不过用的是 Lite 版本，还是因为不需要图形界面嘛，所以就不要桌面支持了。下载的是个 ZIP 包，解压之后是个 img 镜像，我是 Mac OS X ，直接用 diskutil + dd 命令将系统刷入 SD 卡，这一步[树莓派官方网站的文档](https://www.raspberrypi.org/documentation/installation/installing-images/mac.md)写的很清楚，操作也简单。
+
+- 1、将 SD 卡插入电脑，运行 `diskutil list` 显示出目前已挂在的磁盘。这里假设你的 SD 卡的磁盘 ID 是 `disk4` 即 `/dev/disk4`
+
+- 2、用 `diskutil unmountDisk` 命令卸载掉已挂载的 SD 卡，例如你的 SD 卡的磁盘 ID 是 `disk4` 那么就运行：
+
+- ```
+diskutil unmountDisk /dev/disk4
+```
+
+- 3、用 `dd` 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 `disk4` 那么就运行：
+
+- ```
+sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4
+```
+
+稍等片刻 Raspbian 系统就成功刷入 SD 卡了。接下来插上网线，上电开机。
+
+##配置 Raspbain 系统
+
+我家里的路由器是[极路由](http://www.hiwifi.com/j3-view)，其实大多路由器都可以，登录到你的路由器管理界面找到接入到网络的树莓派的内网 IP 地址，然后就可以通过 SSH 来登录了：
+
+```
+ssh pi@192.168.xxx.xxx
+```
+
+默认密码是 `raspberry`。如果你成功登录了树莓派那么就可以开始进行配置了，配置操作也方便的很，一个命令搞定：
+
+```
+sudo raspi-config
+```
+
+这个命令会显示一个配置菜单，有不少项目需要配置，我一个一个说。
+
+###1. Expand Filesystem
+
+这个选项可以让你刚刚刷入的 Raspbian 系统使用 SD 卡上的全部空间。第一步要做这个是因为这个操作需要重启后才能生效。做完后重启树莓派然后通过 SSH 重新登录。如果你的路由器支持，最好设置一下 [DHCP](https://zh.wikipedia.org/wiki/%E5%8A%A8%E6%80%81%E4%B8%BB%E6%9C%BA%E8%AE%BE%E7%BD%AE%E5%8D%8F%E8%AE%AE) 给树莓派分配一个固定的 IP 地址。
+
+###2. Change User Password
+
+修改当前用户 pi 的密码，这个你现在做也可以，之后用命令 `password pi` 来做也成，总之建议还是改一下密码，毕竟默认密码 `raspberry` 是众所周知的。
+
+### 3. Boot Options
+
+启动选项，说白了就是开机后是默认进入图形桌面还是进入命令行，我是没有图形桌面的，所以确认选择：
+
+> B1 Console    Text console, requiring user to login
+
+### 4. Internationalisation Optins
+
+这个选项下面需要修改两个子项，`locale` 和 `timezone`。
+
+`locale` 我选择了 
+
+> `en_GB.UTF-8 UTF-8`
+> 
+> `en_US ISO-8859-1`
+> 
+> `en_US.UTF-8 UTF-8`
+> 
+> `zh_CN.UTF-8 UTF-8`
+> 
+> `zh_CN GB2312`
+> 
+> `zh_CN.GB18030 GB18030`
+
+默认本地化选项我选择了 `en_US.UTF-8`
+
+本地化选项你也完全可以通过编辑 `/etc/locale.gen` 文件来配置，就是将文件中上述本地化项目的注释去掉即可。如果你通过 `/etc/locale.gen` 来修改的话，修改完毕后要记得使用命令来更新本地化设置
+
+```
+sudo locale-gen
+```
+
+另外在通过 SSH 登录后你很有可能收到这样的警告：
+
+```
+-bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8)
+-bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8)
+-bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8)
+```
+
+不要着急，编辑 `/etc/locale.conf` 文件，做如下设置
+
+```
+LANG=en_US.UTF-8
+LC_ALL=en_US.UTF-8
+```
+
+`timezone` 时区设置没什么可说的，根据你所在地区做出选择，我选择的是 `Asia/Shanghai`
+
+###5. Add to Rastrack
+
+这个挺有意思。如果你对隐私什么的没有额外的洁癖，可以打开这个选项。它会将你的树莓派的地理位置和其他全世界使用树莓派的小伙伴们标记在 Google Map 上面，并可以通过 [rastrack.co.uk](http://rastrack.co.uk/) 这个网站查看。
+
+##使用无线网卡
+
+网线大大限制了树莓派的便捷性，给树莓派配上个 USB 的无线网卡就舒服多了。对于无线网卡的选择建议你千万不要盲目，看一下树莓派的[硬件兼容列表](http://elinux.org/RPi_VerifiedPeripherals#USB_Wi-Fi_Adapters)再下单也不迟，否则买到不兼容的硬件就呵呵了（我第一次给树莓派购买的 SD 卡就因为不兼容而呵呵了）。我使用的是 [EDUP EP-N8508GS黄金版 迷你USB无线网卡](http://item.jd.com/509932.html)
+
+插上你购买的 USB 无线网卡，通过运行命令 `sudo lsusb` 来查看，如果你看到
+
+```
+Bus 001 Device 004: ID 0bda:8176 Realtek Semiconductor Corp. RTL8188CUS 802.11n WLAN Adapter
+Bus 001 Device 003: ID 0424:ec00 Standard Microsystems Corp. SMSC9512/9514 Fast Ethernet Adapter
+Bus 001 Device 002: ID 0424:9512 Standard Microsystems Corp. LAN9500 Ethernet 10/100 Adapter / SMSC9512/9514 Hub
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+```
+
+能找到标有 `802.11n WLAN Adapter` 字样，或者运行命令
+
+```
+ifconfig -a
+```
+
+能看到标有 `wlan0` 字样，那么恭喜你，说明你的 USB 无线网卡是可用的了。下面我们在做配置。首先是 `/etc/network/interfaces` 文件
+
+```
+auto lo
+iface lo inet loopback
+
+auto eth0
+iface eth0 inet dhcp
+
+auto wlan0
+allow-hotplug wlan0
+iface wlan0 inet dhcp
+wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+iface default inet dhcp
+```
+由于我的设备的内网 IP 都是路由器通过 DHCP 分配的，如果你的不是，那么配置文件的内容是有所不同的。接下来是 `/etc/wpa_supplicant/wpa_supplicant.conf` 文件，这个文件主要是配置要接入的 wifi 的帐号密码。如果你不确定你要接入的 wifi 的 ssid ，可以使用下面这个命令叫无线网卡扫描一下身边的 wifi 热点
+
+```
+sudo iwlist wlan0 scan
+```
+
+然后配置你的 wifi 接入帐号配置
+
+```
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+update_config=1
+
+network={
+	ssid="wifi-001"
+	key_mgmt=WPA-PSK
+	psk="wifi-001-password"
+}
+
+network={
+	ssid="wifi-002"
+	key_mgmt=WPA-PSK
+	psk="wifi-002-password"
+}
+```
+
+上述 wifi 使用的是 WPA/WPA2 加密，这里有几点需要注意的
+
+- 1. 如果你的 wifi 没有密码，那么 `key_mgmt=NONE` 并去掉 `psk`
+
+- 2. 如果你的 wifi 是 WEP 加密，那么 `key_mgmt=NONE` 并去掉 `psk` 加上 `wep_key0="wifi-wep-password"`
+
+配置完成后拔掉网线，然后重启你的树莓派，再进入你的路由器管理后台，如果能看到你的树莓派接入到网络了，那么恭喜你，你的树莓派已经拜托了网线的束缚。
+
+##关闭无线网卡的休眠功能
+
+在使用的过程中我发现经常出现 SSH 无法链接到树莓派，过一会儿又可以链接；树莓派的 HTTP 80 端口经常莫名其妙的就无法访问，然后过一会儿就可以访问。一开始我以为是树莓派不稳定，可是每次无法链接时我去查看路由器后台发现树莓派的网络接入都是正常的，直到后来我才明白，无线网卡默认是可以休眠的。通过下面的命令检查你的无线网卡是否也是自动休眠的：
+
+```
+cat /sys/module/8192cu/parameters/rtw_power_mgnt
+```
+
+如果命令返回值为 `1` 那么你的无线网卡也是自动休眠的，如果返回的是 `0` 则没有开启休眠功能。如果是 `1` 那么你需要手动关闭无线网卡的休眠功能，具体方式是编辑文件 `/etc/modprobe.d/8192cu.conf`（如果文件不存在则新建）加入如下配置项目
+
+```
+# Disable power saving
+options 8192cu rtw_power_mgnt=0
+```
+
+重启一下树莓派，然后再次运行 `cat /sys/module/8192cu/parameters/rtw_power_mgnt` 命令，如果返回值变为了 `0` 那么你的无线网网卡的休眠功能就被关闭了。这下树莓派的链接就稳定了。
+
+##路由器的端口转发和动态域名解析
+
+如果你不安于只在内网环境下摆弄树莓派，想要像我一样把树莓派放在家里，到了公司照样可以愉快的玩耍你的树莓派，那么你就需要做端口转发和动态域名解析。当然要能做到这两点，你需要满足
+
+- 1、 你的树莓派接入的网络有公网 IP
+
+- 2、 你的树莓派接入的路由器支持端口转发，当然能支持动态域名解析就更完美了。
+
+一般的一级宽带运营商都可以满足第一条，但是有些小的第三方宽带运营商是不行的。像端口转发这种功能一般高级一点儿的路由器都是可以的，或是像小米路由、极路由这种性价比比较不错的路由器也是有的。具体的操作看自己路由器的支持和设置了，这里就不详述了。
+
+到此树莓派的运行环境基本就搭建完毕了，至于接下来要怎么折腾，怎么玩耍，那就看大家的脑洞有多大了，最后祝大家玩的愉快。
