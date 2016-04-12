@@ -4,7 +4,7 @@
   <title><![CDATA[leenjewel Blog]]></title>
   <link href="http://leenjewel.github.io/atom.xml" rel="self"/>
   <link href="http://leenjewel.github.io/"/>
-  <updated>2016-04-11T17:38:29+08:00</updated>
+  <updated>2016-04-12T23:59:47+08:00</updated>
   <id>http://leenjewel.github.io/</id>
   <author>
     <name><![CDATA[leenjewel]]></name>
@@ -37,20 +37,21 @@
 <ul>
 <li><p>1、将 SD 卡插入电脑，运行 <code>diskutil list</code> 显示出目前已挂在的磁盘。这里假设你的 SD 卡的磁盘 ID 是 <code>disk4</code> 即 <code>/dev/disk4</code></p></li>
 <li><p>2、用 <code>diskutil unmountDisk</code> 命令卸载掉已挂载的 SD 卡，例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</p></li>
+<li><p>&#8220;`
+diskutil unmountDisk /dev/disk4</p></li>
 </ul>
 
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>diskutil unmountDisk /dev/disk4</span></code></pre></td></tr></table></div></figure>
-
-
-<ul>
-<li>3、用 <code>dd</code> 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</li>
-</ul>
-
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4</span></code></pre></td></tr></table></div></figure>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>
+</span><span class='line'>- 3、用 `dd` 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 `disk4` 那么就运行：
+</span><span class='line'>
+</span><span class='line'>- ```
+</span><span class='line'>sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4</span></code></pre></td></tr></table></div></figure>
 
 
 <p>稍等片刻 Raspbian 系统就成功刷入 SD 卡了。接下来插上网线，上电开机。</p>
@@ -179,7 +180,7 @@
 </span><span class='line'>auto wlan0
 </span><span class='line'>allow-hotplug wlan0
 </span><span class='line'>iface wlan0 inet dhcp
-</span><span class='line'>wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+</span><span class='line'>wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
 </span><span class='line'>iface default inet dhcp</span></code></pre></td></tr></table></div></figure>
 
 
@@ -235,7 +236,13 @@
 </ul>
 
 
-<p>配置完成后拔掉网线，然后重启你的树莓派，再进入你的路由器管理后台，如果能看到你的树莓派接入到网络了，那么恭喜你，你的树莓派已经拜托了网线的束缚。</p>
+<p>然后执行下面的命令启动无线网卡</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo ifup wlan0</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果命令执行没有报错，那么再进入你的路由器管理后台，如果能看到你的树莓派的无线网卡也已经接入到网络了，那么恭喜你，你可以拔掉网线了，你的树莓派已经拜托了网线的束缚。</p>
 
 <h2>关闭无线网卡的休眠功能</h2>
 
