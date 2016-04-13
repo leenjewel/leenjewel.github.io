@@ -146,7 +146,7 @@ iface eth0 inet dhcp
 auto wlan0
 allow-hotplug wlan0
 iface wlan0 inet dhcp
-wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
 iface default inet dhcp
 ```
 由于我的设备的内网 IP 都是路由器通过 DHCP 分配的，如果你的不是，那么配置文件的内容是有所不同的。接下来是 `/etc/wpa_supplicant/wpa_supplicant.conf` 文件，这个文件主要是配置要接入的 wifi 的帐号密码。如果你不确定你要接入的 wifi 的 ssid ，可以使用下面这个命令叫无线网卡扫描一下身边的 wifi 热点
@@ -180,7 +180,14 @@ network={
 
 - 2. 如果你的 wifi 是 WEP 加密，那么 `key_mgmt=NONE` 并去掉 `psk` 加上 `wep_key0="wifi-wep-password"`
 
-配置完成后拔掉网线，然后重启你的树莓派，再进入你的路由器管理后台，如果能看到你的树莓派接入到网络了，那么恭喜你，你的树莓派已经拜托了网线的束缚。
+
+然后执行下面的命令启动无线网卡
+
+```
+sudo ifup wlan0
+```
+
+如果命令执行没有报错，那么再进入你的路由器管理后台，如果能看到你的树莓派的无线网卡也已经接入到网络了，那么恭喜你，你可以拔掉网线了，你的树莓派已经拜托了网线的束缚。
 
 ##关闭无线网卡的休眠功能
 
