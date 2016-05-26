@@ -750,6 +750,27 @@
 
 
 <p>至于 Java 代码上面的章节已经都贴过了，这里就不再重复粘贴了，大家翻看上面的代码来感受一下吧。</p>
+
+<h2>全屏和背景半透明</h2>
+
+<p>这个只有三行代码，直接放出了</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">getWindow</span><span class="o">().</span><span class="na">setFlags</span><span class="o">(</span><span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span> <span class="n">FLAG_FULLSCREEN</span><span class="o">,</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span> <span class="n">FLAG_FULLSCREEN</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">requestWindowFeature</span><span class="o">(</span><span class="n">Window</span><span class="o">.</span><span class="na">FEATURE_NO_TITLE</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">getWindow</span><span class="o">().</span><span class="na">setBackgroundDrawable</span><span class="o">(</span><span class="k">new</span> <span class="n">ColorDrawable</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">parseColor</span><span class="o">(</span><span class="s">&quot;#75000000&quot;</span><span class="o">)));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
 </div>
 
 
