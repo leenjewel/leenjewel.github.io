@@ -104,21 +104,20 @@
 <ul>
 <li><p>1、将 SD 卡插入电脑，运行 <code>diskutil list</code> 显示出目前已挂在的磁盘。这里假设你的 SD 卡的磁盘 ID 是 <code>disk4</code> 即 <code>/dev/disk4</code></p></li>
 <li><p>2、用 <code>diskutil unmountDisk</code> 命令卸载掉已挂载的 SD 卡，例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</p></li>
-<li><p>&#8220;`
-diskutil unmountDisk /dev/disk4</p></li>
 </ul>
 
 
 <figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>
-</span><span class='line'>- 3、用 `dd` 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 `disk4` 那么就运行：
-</span><span class='line'>
-</span><span class='line'>- ```
-</span><span class='line'>sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4</span></code></pre></td></tr></table></div></figure>
+</pre></td><td class='code'><pre><code class=''><span class='line'>diskutil unmountDisk /dev/disk4</span></code></pre></td></tr></table></div></figure>
+
+
+<ul>
+<li>3、用 <code>dd</code> 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</li>
+</ul>
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4</span></code></pre></td></tr></table></div></figure>
 
 
 <p>稍等片刻 Raspbian 系统就成功刷入 SD 卡了。接下来插上网线，上电开机。</p>

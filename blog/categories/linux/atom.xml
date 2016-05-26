@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Linux | leenjewel Blog]]></title>
   <link href="http://leenjewel.github.io/blog/categories/linux/atom.xml" rel="self"/>
   <link href="http://leenjewel.github.io/"/>
-  <updated>2016-04-12T23:59:47+08:00</updated>
+  <updated>2016-05-26T17:18:03+08:00</updated>
   <id>http://leenjewel.github.io/</id>
   <author>
     <name><![CDATA[leenjewel]]></name>
@@ -37,15 +37,21 @@
 <ul>
 <li><p>1、将 SD 卡插入电脑，运行 <code>diskutil list</code> 显示出目前已挂在的磁盘。这里假设你的 SD 卡的磁盘 ID 是 <code>disk4</code> 即 <code>/dev/disk4</code></p></li>
 <li><p>2、用 <code>diskutil unmountDisk</code> 命令卸载掉已挂载的 SD 卡，例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</p></li>
-<li><p><code>
-diskutil unmountDisk /dev/disk4
-</code></p></li>
-<li><p>3、用 <code>dd</code> 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</p></li>
-<li><p><code>
-sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4
-</code></p></li>
 </ul>
 
+
+<p><code>
+diskutil unmountDisk /dev/disk4
+</code></p>
+
+<ul>
+<li>3、用 <code>dd</code> 命令将 Raspbian 系统镜像刷入 SD 卡。例如你的 SD 卡的磁盘 ID 是 <code>disk4</code> 那么就运行：</li>
+</ul>
+
+
+<p><code>
+sudo dd bs=1M if=2016-03-18-raspbian-jessie.img of=/dev/rdisk4
+</code></p>
 
 <p>稍等片刻 Raspbian 系统就成功刷入 SD 卡了。接下来插上网线，上电开机。</p>
 
