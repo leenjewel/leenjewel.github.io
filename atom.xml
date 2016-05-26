@@ -4,7 +4,7 @@
   <title><![CDATA[leenjewel Blog]]></title>
   <link href="http://leenjewel.github.io/atom.xml" rel="self"/>
   <link href="http://leenjewel.github.io/"/>
-  <updated>2016-05-26T17:18:03+08:00</updated>
+  <updated>2016-05-26T17:23:06+08:00</updated>
   <id>http://leenjewel.github.io/</id>
   <author>
     <name><![CDATA[leenjewel]]></name>
@@ -18,9 +18,9 @@
     <link href="http://leenjewel.github.io/blog/2016/05/26/chun-java-dai-ma-shi-xian-android-ui/"/>
     <updated>2016-05-26T14:24:16+08:00</updated>
     <id>http://leenjewel.github.io/blog/2016/05/26/chun-java-dai-ma-shi-xian-android-ui</id>
-    <content type="html"><![CDATA[<h2>为什么要用纯 Java 代码来实现 Android UI 界面</h2>
+    <content type="html"><![CDATA[<p>这是一篇很初级也很简单的教程。</p>
 
-<p>这是一篇很初级也很简单的教程。</p>
+<h2>为什么要用纯 Java 代码来实现 Android UI 界面</h2>
 
 <p>众所周知在 Android 开发时应用的 UI 界面一般是通过 XML 文件构建的。目前主流的 Android Studio 和 <del>Eclipse</del> 都可以通过鼠标拖拽控件的方式很高效的来搭建 UI 界面。那么为什么还要使用纯 Java 代码的方式来实现 UI 界面呢？</p>
 
@@ -58,7 +58,7 @@
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 </pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="kt">int</span> <span class="nf">dp2px</span><span class="o">(</span><span class="kt">float</span> <span class="n">dp</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>  <span class="kd">final</span> <span class="kt">float</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">getResources</span><span class="o">().</span><span class="na">getDisplayMetrics</span><span class="o">().</span><span class="na">density</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="kt">float</span> <span class="n">scale</span> <span class="o">=</span> <span class="n">getResources</span><span class="o">().</span><span class="na">getDisplayMetrics</span><span class="o">().</span><span class="na">density</span><span class="o">;</span>
 </span><span class='line'>    <span class="k">return</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="o">(</span><span class="n">dp</span> <span class="o">*</span> <span class="n">scale</span> <span class="o">+</span> <span class="mf">0.5f</span><span class="o">);</span>
 </span><span class='line'><span class="o">}</span>
 </span></code></pre></td></tr></table></div></figure>
