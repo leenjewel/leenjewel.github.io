@@ -399,3 +399,18 @@ class TGCPADCloseButtonBackground extends GradientDrawable {
 ```
 
 至于 Java 代码上面的章节已经都贴过了，这里就不再重复粘贴了，大家翻看上面的代码来感受一下吧。
+
+##全屏和背景半透明
+
+这个只有三行代码，直接放出了
+
+```java
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getWindow().setFlags(WindowManager.LayoutParams. FLAG_FULLSCREEN, WindowManager.LayoutParams. FLAG_FULLSCREEN);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.parseColor("#75000000")));
+    }
+
+```
