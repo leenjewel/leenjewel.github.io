@@ -7,6 +7,8 @@ categories: Android
 ---
 最近在做的一款游戏针对海外发行，要上 Google Play，所以支付这块儿要接入 Google Play 。因为我们是免费 App + 应用内支付，所以 Google Play 这块儿只接入 In-app 类型的支付方式，接下来我准备吐槽了。
 
+另外又新写了一篇[《Google 支付从入门到跳坑》](http://leenjewel.github.io/blog/2016/06/21/google-zhi-fu-cong-ru-men-dao-tiao-keng/)来总结了一下，欢迎阅读。
+
 ### 大环境
 
 国内做 Google Play 相关的开发外围难度因素可想而知。具体原因相比大家都知道，所以那个什么墙什么的我就不多说了。这里已经无力吐槽了。
