@@ -1,0 +1,308 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Google 支付从入门到跳坑 - leenjewel Blog</title>
+	<meta name="author" content="leenjewel">
+
+	
+	<meta name="description" content="Google 支付真的不难，难的是由于“你懂的”的国内网络环境导致的复杂的测试流程和 Google Console “天花烂缀”的各种配置项目还有那些“文不达意”的报错信息。 很早写过一篇《Google Play In-app Billing 踩过的那些坑》， &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="leenjewel Blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="http://tajs.qq.com/stats?sId=52606582" charset="UTF-8"></script>
+<script type="text/javascript" charset="UTF-8" src="http://lurongkai.github.io/anti-baidu/js/anti-baidu-latest.min.js"></script>
+
+</head>
+
+
+<body>
+	<header id="header" class="inner"><nav id="title-nav">
+<h1><a href="/">leenjewel Blog</a></h1>
+
+<h2>Anything about code.</h2>
+
+</nav>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:leenjewel.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+		<a class="github" href="https://github.com/leenjewel" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:leenjewel.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">Google 支付从入门到跳坑</h2>
+	<div class="entry-content"><p>Google 支付真的不难，难的是由于“你懂的”的国内网络环境导致的复杂的测试流程和 Google Console “天花烂缀”的各种配置项目还有那些“文不达意”的报错信息。</p>
+
+<p>很早写过一篇<a href="http://leenjewel.github.io/blog/2014/11/21/google-play-in-app-billing-cai-guo-de-na-xie-keng/">《Google Play In-app Billing 踩过的那些坑》</a>，通过网站数据统计发现这篇文章的搜索和阅读量是最大的，后来又通过这篇文章的评论还有其他渠道和不少朋友们交流关于接入 Google 支付时遇到的问题发现大家对于这块儿还是有很多“心虚”的地方，还有一些“坑”我之前也没有说明白，所以我觉得有必要再写一篇来说说 Google 支付。</p>
+
+<h2>先吃两颗定心丸</h2>
+
+<p>有两件事一定要知道：</p>
+
+<ul>
+<li><p><strong>Google 支付很简单，一点儿都不难，所以不要头疼，不好害怕，不要压力山大。</strong></p></li>
+<li><p><strong>当你写好代码完成接入准备测试 Google 支付时，只要顺利弹出了 Google 支付相关的 UI 界面，哪怕是报错提示信息，千万不要怀疑你的代码，只要弹出 UI 界面，你的代码就是对的，问题出在配置上。</strong></p></li>
+</ul>
+
+
+<p>具体如何接入 Google 支付不是这篇文章的主旨，所以就不做详细的介绍了。因为 Google 支付接入真的非常简单。你可以仔细阅读<a href="https://developer.android.com/google/play/billing/index.html?hl=i">《官方文档》</a>或是我之前写的那篇<a href="http://leenjewel.github.io/blog/2014/11/21/google-play-in-app-billing-cai-guo-de-na-xie-keng/">《Google Play In-app Billing 踩过的那些坑》</a>再或者干脆阅读 Android SDK 附带的 Google 支付的 Sample 示例工程的源代码都可以帮你快速轻松的完成 Google 支付的编码接入过程。</p>
+
+<p>Samples 示例工程的位置在：</p>
+
+<blockquote><p>你的 Android SDK 目录/extras/google/play_billing/samples</p></blockquote>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_samples.png" alt="Google Play Billing 示例程序位置" />
+</center><br/></p>
+
+<p>如果没有，请记得先打开 <code>Android SDK Manager</code> 去下载。</p>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_sdkmanager.png" alt="Android SDK Manager" />
+</center><br/></p>
+
+<h2>配置并发布应用内商品</h2>
+
+<p>这里也是两点主意：</p>
+
+<ul>
+<li><p><strong>配置完应用内商品一定要发布，使之生效</strong></p></li>
+<li><p><strong>如果测试的时候需要“翻墙”，诸如使用 VPN 时，一定要保证你的网络环境所对应的国家在发布范围内</strong></p></li>
+</ul>
+
+
+<p>第一条不用多说什么，在 Google Play Developer Console【应用内商品】中配置好商品，完成后的配置看起来是这个样子的就对了。</p>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_inapp.png" alt="应用内商品发布" />
+</center><br/></p>
+
+<p>第二条一定要主意。一般在国内的开发者在测试 Google 支付的时候肯定是要“翻墙”的，这里就需要记住，举个例子，如果你使用的是美国的 VPN 进行测试，那么美国一定要在分发的国家或地区范围内，否则是无法进行测试的。</p>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_country.png" alt="分发的国家或地区" />
+</center><br/></p>
+
+<h2>上传 APK 并发布应用</h2>
+
+<p>这里需要注意的点比较多：</p>
+
+<ul>
+<li><p><strong>APK 包发布到 Beta 或者 Alpha 渠道即可，没必要发布到正式渠道。</strong></p></li>
+<li><p><strong>如果你的应用状态变为【已发布】说明发布成功了。</strong></p></li>
+<li><p><strong>一些隐私问题或政策问题会导致你的应用无法通过审核，使用第三方 SDK 或者权限时要多加小心。</strong></p></li>
+<li><p><strong>你安装到设备上用来测试的 APK 包可以和你上传到 Google Play Developer Console 上的 APK 包不同，但要保证这两个 APK 包使用了相同的签名，这两个 APK 包的 versionCode 要一致。</strong></p></li>
+<li><p><strong>你测试时使用的网络环境所属的国家和地区一定要在你应用发布的国家或地区范围内。</strong></p></li>
+</ul>
+
+
+<p>首先不要担心你的应用还没有开发完毕，大胆的发布你的应用。发布应用是测试 Google 支付的前提条件，所以请放心大胆的点击 Google Play Developer Console 页面右上角的【发布】按钮来发布你的应用吧。</p>
+
+<p>要想发布你的应用你的上传你的 APK 包，这毋庸置疑。还是那句话，不要担心你的 APK 没有开发完或者还是个半成品，因为你在设备上安装用来测试的 APK 可以和你上传到 Google Play 的 APK 不一样。也就是说你可以先上传一个 APK 包，然后继续你的开发工作，任何开发或修改都不必重新上传你的 APK 包，直接将新生成的 APK 包安装到设备上测试即可。而你要做的就是保证安装到设备上的 APK 包的签名和上传的包的签名一致，<code>AndroidManifest.xml</code> 文件中 <code>versionCode</code> 也是一致的即可。</p>
+
+<p>之前有个朋友公司的 APK 就遇到了因为接入了 <a href="https://www.talkingdata.com/">TalkingData</a> 的 SDK 导致违反了 Google 的隐私政策而无法通过审核的问题。所以这里也需要注意，关于 Google 对发布到 Google Play 的应用的政策要求请自行查阅相关文档。</p>
+
+<p>最后一点其实在上面那个章节已经说过了，这里还要重申一下，一定要保证测试时使用的网络环境所在的国家和地区在你应用发布的国家或地区的范围内。这一点非常重要。</p>
+
+<h2>测试 Google 支付</h2>
+
+<p>到这里你距离成功就很近了：</p>
+
+<ul>
+<li><p><strong>你的测试设备上一定要安装了 Google Play Service</strong></p></li>
+<li><p><strong>封闭测试时，除了要将测试人员的 Google Play 帐号加入封闭测试人员列表，还要让拥有这些测试帐号的人员通过访问生成的特殊链接来确认加入测试列表。</strong></p></li>
+<li><p><strong>测试支付是不会真的扣除你的任何费用的，但是即便如此你的测试 Google Play 帐号上还是需要绑定一张有国际支付能力的信用卡或银行卡的。</strong></p></li>
+</ul>
+
+
+<p>这里重点说说封闭测试，相对于开放性测试封闭测试的流程稍微复杂一些。首先如图所示：</p>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_test.png" alt="封闭测试设置" />
+</center><br/></p>
+
+<p>首先要将想要参与测试的 Google Play 帐号加入到测试人员列表中。这样只有加入到列表中的 Google Play 帐号才能够测试 Google 支付。</p>
+
+<p>这里最需要注意也是最容易被忽略的是在将测试人员的 Google Play 帐号加入到测试人员列表后，一定要记得将下面那个生成好的链接发给参与测试的人员，让他们用浏览器打开这个链接，只有这样测试人员才真的加入了测试列表，才可以真的进行 Google 支付测试。否则在进行支付测试时你将得到<code>无法购买您要买的商品</code>错误提示。</p>
+
+<h2>最后</h2>
+
+<p>只要避开上面这些“坑”，你会发现其实 Google 支付真的很简单。如果你不幸掉到其他的“坑”里面了，欢迎分享给我，我们一起填坑。</p>
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-06-21T14:45:19+08:00" pubdate data-updated="true">2016年6月21日</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/android/'>Android</a>
+
+
+</div>
+	
+	<div class="comments"><a href="#disqus_thread">Comments</a></div>
+	
+	<div>
+		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
+		<form action="https://shenghuo.alipay.com/send/payment/fill.htm" method="post" target="_blank" accept-charset="GBK" id="alipayForm">
+			<input name="optEmail" type="hidden" value="leenjewel@gmail.com" />
+			<input name="payAmount" type="hidden" value="1.00" />
+			<input id="title" name="title" type="hidden" value="捐赠给 leenjewel.github.io" />
+			<input name="memo" type="hidden" value="文章写的不错，我来捐赠鼓励的！" />
+			<input name="pay" type="image" src="https://img.alipay.com/sys/personalprod/style/mc/btn-index.png" width="150" height="40">
+		</form>
+	</div>
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		
+		
+	</div>
+	
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2016
+
+    leenjewel
+
+<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1256882796'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s95.cnzz.com/z_stat.php%3Fid%3D1256882796%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script></footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'leenjewelgithubio';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://leenjewel.github.io/blog/2016/06/21/google-zhi-fu-cong-ru-men-dao-tiao-keng/';
+        var disqus_url = 'http://leenjewel.github.io/blog/2016/06/21/google-zhi-fu-cong-ru-men-dao-tiao-keng/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//go.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-52061917-1']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- leenjewel.github.io -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-7743616000257723"
+     data-ad-slot="4032598696"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</body>
+</html>

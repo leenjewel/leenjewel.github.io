@@ -7,7 +7,7 @@
 	<meta name="author" content="leenjewel">
 
 	
-	<meta name="description" content="这是一篇很初级也很简单的教程。 为什么要用纯 Java 代码来实现 Android UI 界面 众所周知在 Android 开发时应用的 UI 界面一般是通过 XML 文件构建的。目前主流的 Android Studio 和 Eclipse 都可以通过鼠标拖拽控件的方式很高效的来搭建 UI 界面 &hellip;">
+	<meta name="description" content="Google 支付真的不难，难的是由于“你懂的”的国内网络环境导致的复杂的测试流程和 Google Console “天花烂缀”的各种配置项目还有那些“文不达意”的报错信息。 很早写过一篇《Google Play In-app Billing 踩过的那些坑》， &hellip;">
 	
 	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
@@ -84,6 +84,165 @@
 		
 	
 	<div id="content" class="inner">
+
+
+    <article class="post">
+	<h2 class="title">
+		
+		<a href="/blog/2016/06/21/google-zhi-fu-cong-ru-men-dao-tiao-keng/">
+		
+			Google 支付从入门到跳坑</a>
+	</h2>
+	<div class="entry-content">
+		<p>Google 支付真的不难，难的是由于“你懂的”的国内网络环境导致的复杂的测试流程和 Google Console “天花烂缀”的各种配置项目还有那些“文不达意”的报错信息。</p>
+
+<p>很早写过一篇<a href="http://leenjewel.github.io/blog/2014/11/21/google-play-in-app-billing-cai-guo-de-na-xie-keng/">《Google Play In-app Billing 踩过的那些坑》</a>，通过网站数据统计发现这篇文章的搜索和阅读量是最大的，后来又通过这篇文章的评论还有其他渠道和不少朋友们交流关于接入 Google 支付时遇到的问题发现大家对于这块儿还是有很多“心虚”的地方，还有一些“坑”我之前也没有说明白，所以我觉得有必要再写一篇来说说 Google 支付。</p>
+
+<h2>先吃两颗定心丸</h2>
+
+<p>有两件事一定要知道：</p>
+
+<ul>
+<li><p><strong>Google 支付很简单，一点儿都不难，所以不要头疼，不好害怕，不要压力山大。</strong></p></li>
+<li><p><strong>当你写好代码完成接入准备测试 Google 支付时，只要顺利弹出了 Google 支付相关的 UI 界面，哪怕是报错提示信息，千万不要怀疑你的代码，只要弹出 UI 界面，你的代码就是对的，问题出在配置上。</strong></p></li>
+</ul>
+
+
+<p>具体如何接入 Google 支付不是这篇文章的主旨，所以就不做详细的介绍了。因为 Google 支付接入真的非常简单。你可以仔细阅读<a href="https://developer.android.com/google/play/billing/index.html?hl=i">《官方文档》</a>或是我之前写的那篇<a href="http://leenjewel.github.io/blog/2014/11/21/google-play-in-app-billing-cai-guo-de-na-xie-keng/">《Google Play In-app Billing 踩过的那些坑》</a>再或者干脆阅读 Android SDK 附带的 Google 支付的 Sample 示例工程的源代码都可以帮你快速轻松的完成 Google 支付的编码接入过程。</p>
+
+<p>Samples 示例工程的位置在：</p>
+
+<blockquote><p>你的 Android SDK 目录/extras/google/play_billing/samples</p></blockquote>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_samples.png" alt="Google Play Billing 示例程序位置" />
+</center><br/></p>
+
+<p>如果没有，请记得先打开 <code>Android SDK Manager</code> 去下载。</p>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_sdkmanager.png" alt="Android SDK Manager" />
+</center><br/></p>
+
+<h2>配置并发布应用内商品</h2>
+
+<p>这里也是两点主意：</p>
+
+<ul>
+<li><p><strong>配置完应用内商品一定要发布，使之生效</strong></p></li>
+<li><p><strong>如果测试的时候需要“翻墙”，诸如使用 VPN 时，一定要保证你的网络环境所对应的国家在发布范围内</strong></p></li>
+</ul>
+
+
+<p>第一条不用多说什么，在 Google Play Developer Console【应用内商品】中配置好商品，完成后的配置看起来是这个样子的就对了。</p>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_inapp.png" alt="应用内商品发布" />
+</center><br/></p>
+
+<p>第二条一定要主意。一般在国内的开发者在测试 Google 支付的时候肯定是要“翻墙”的，这里就需要记住，举个例子，如果你使用的是美国的 VPN 进行测试，那么美国一定要在分发的国家或地区范围内，否则是无法进行测试的。</p>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_country.png" alt="分发的国家或地区" />
+</center><br/></p>
+
+<h2>上传 APK 并发布应用</h2>
+
+<p>这里需要注意的点比较多：</p>
+
+<ul>
+<li><p><strong>APK 包发布到 Beta 或者 Alpha 渠道即可，没必要发布到正式渠道。</strong></p></li>
+<li><p><strong>如果你的应用状态变为【已发布】说明发布成功了。</strong></p></li>
+<li><p><strong>一些隐私问题或政策问题会导致你的应用无法通过审核，使用第三方 SDK 或者权限时要多加小心。</strong></p></li>
+<li><p><strong>你安装到设备上用来测试的 APK 包可以和你上传到 Google Play Developer Console 上的 APK 包不同，但要保证这两个 APK 包使用了相同的签名，这两个 APK 包的 versionCode 要一致。</strong></p></li>
+<li><p><strong>你测试时使用的网络环境所属的国家和地区一定要在你应用发布的国家或地区范围内。</strong></p></li>
+</ul>
+
+
+<p>首先不要担心你的应用还没有开发完毕，大胆的发布你的应用。发布应用是测试 Google 支付的前提条件，所以请放心大胆的点击 Google Play Developer Console 页面右上角的【发布】按钮来发布你的应用吧。</p>
+
+<p>要想发布你的应用你的上传你的 APK 包，这毋庸置疑。还是那句话，不要担心你的 APK 没有开发完或者还是个半成品，因为你在设备上安装用来测试的 APK 可以和你上传到 Google Play 的 APK 不一样。也就是说你可以先上传一个 APK 包，然后继续你的开发工作，任何开发或修改都不必重新上传你的 APK 包，直接将新生成的 APK 包安装到设备上测试即可。而你要做的就是保证安装到设备上的 APK 包的签名和上传的包的签名一致，<code>AndroidManifest.xml</code> 文件中 <code>versionCode</code> 也是一致的即可。</p>
+
+<p>之前有个朋友公司的 APK 就遇到了因为接入了 <a href="https://www.talkingdata.com/">TalkingData</a> 的 SDK 导致违反了 Google 的隐私政策而无法通过审核的问题。所以这里也需要注意，关于 Google 对发布到 Google Play 的应用的政策要求请自行查阅相关文档。</p>
+
+<p>最后一点其实在上面那个章节已经说过了，这里还要重申一下，一定要保证测试时使用的网络环境所在的国家和地区在你应用发布的国家或地区的范围内。这一点非常重要。</p>
+
+<h2>测试 Google 支付</h2>
+
+<p>到这里你距离成功就很近了：</p>
+
+<ul>
+<li><p><strong>你的测试设备上一定要安装了 Google Play Service</strong></p></li>
+<li><p><strong>封闭测试时，除了要将测试人员的 Google Play 帐号加入封闭测试人员列表，还要让拥有这些测试帐号的人员通过访问生成的特殊链接来确认加入测试列表。</strong></p></li>
+<li><p><strong>测试支付是不会真的扣除你的任何费用的，但是即便如此你的测试 Google Play 帐号上还是需要绑定一张有国际支付能力的信用卡或银行卡的。</strong></p></li>
+</ul>
+
+
+<p>这里重点说说封闭测试，相对于开放性测试封闭测试的流程稍微复杂一些。首先如图所示：</p>
+
+<br/><center>
+
+
+<p><img src="http://7rfk33.com1.z0.glb.clouddn.com/google_play_billing_test.png" alt="封闭测试设置" />
+</center><br/></p>
+
+<p>首先要将想要参与测试的 Google Play 帐号加入到测试人员列表中。这样只有加入到列表中的 Google Play 帐号才能够测试 Google 支付。</p>
+
+<p>这里最需要注意也是最容易被忽略的是在将测试人员的 Google Play 帐号加入到测试人员列表后，一定要记得将下面那个生成好的链接发给参与测试的人员，让他们用浏览器打开这个链接，只有这样测试人员才真的加入了测试列表，才可以真的进行 Google 支付测试。否则在进行支付测试时你将得到<code>无法购买您要买的商品</code>错误提示。</p>
+
+<h2>最后</h2>
+
+<p>只要避开上面这些“坑”，你会发现其实 Google 支付真的很简单。如果你不幸掉到其他的“坑”里面了，欢迎分享给我，我们一起填坑。</p>
+
+		
+		
+	</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-06-21T14:45:19+08:00" pubdate data-updated="true">2016年6月21日</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/android/'>Android</a>
+
+
+</div>
+	
+	<div class="comments"><a href="/blog/2016/06/21/google-zhi-fu-cong-ru-men-dao-tiao-keng/#disqus_thread">Comments</a></div>
+	
+	<div>
+		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
+		<form action="https://shenghuo.alipay.com/send/payment/fill.htm" method="post" target="_blank" accept-charset="GBK" id="alipayForm">
+			<input name="optEmail" type="hidden" value="leenjewel@gmail.com" />
+			<input name="payAmount" type="hidden" value="1.00" />
+			<input id="title" name="title" type="hidden" value="捐赠给 leenjewel.github.io" />
+			<input name="memo" type="hidden" value="文章写的不错，我来捐赠鼓励的！" />
+			<input name="pay" type="image" src="https://img.alipay.com/sys/personalprod/style/mc/btn-index.png" width="150" height="40">
+		</form>
+	</div>
+</div>
+</article>
 
 
     <article class="post">
@@ -5370,6 +5529,8 @@
 	<div class="entry-content">
 		<p>最近在做的一款游戏针对海外发行，要上 Google Play，所以支付这块儿要接入 Google Play 。因为我们是免费 App + 应用内支付，所以 Google Play 这块儿只接入 In-app 类型的支付方式，接下来我准备吐槽了。</p>
 
+<p>另外又新写了一篇<a href="http://leenjewel.github.io/blog/2016/06/21/google-zhi-fu-cong-ru-men-dao-tiao-keng/">《Google 支付从入门到跳坑》</a>来总结了一下，欢迎阅读。</p>
+
 <h3>大环境</h3>
 
 <p>国内做 Google Play 相关的开发外围难度因素可想而知。具体原因相比大家都知道，所以那个什么墙什么的我就不多说了。这里已经无力吐槽了。</p>
@@ -5558,568 +5719,6 @@
 </div>
 	
 	<div class="comments"><a href="/blog/2014/11/21/google-play-in-app-billing-cai-guo-de-na-xie-keng/#disqus_thread">Comments</a></div>
-	
-	<div>
-		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
-		<form action="https://shenghuo.alipay.com/send/payment/fill.htm" method="post" target="_blank" accept-charset="GBK" id="alipayForm">
-			<input name="optEmail" type="hidden" value="leenjewel@gmail.com" />
-			<input name="payAmount" type="hidden" value="1.00" />
-			<input id="title" name="title" type="hidden" value="捐赠给 leenjewel.github.io" />
-			<input name="memo" type="hidden" value="文章写的不错，我来捐赠鼓励的！" />
-			<input name="pay" type="image" src="https://img.alipay.com/sys/personalprod/style/mc/btn-index.png" width="150" height="40">
-		</form>
-	</div>
-</div>
-</article>
-
-
-    <article class="post">
-	<h2 class="title">
-		
-		<a href="/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/">
-		
-			【学习xv6】从实模式到保护模式</a>
-	</h2>
-	<div class="entry-content">
-		<h2>前言</h2>
-
-<p>这是一系列 xv6 代码学习的总结。对于还不知道 xv6 是什么的同学，我这里只简单说一下：xv6 是一个教学用的操作系统，基于 unix v6，再具体的请大家自行 Google 一下 wiki 什么的。</p>
-
-<p>配合这个系列的文章，我在<a href="https://github.com/leenjewel/">我的 GitHub</a>上建立了一个叫<a href="https://github.com/leenjewel/xv6_learn">xv6_learn</a>的项目，这个项目就是在 clone 自 xv6 官方源代码的基础上在源码文件中加入了我学习过程中的大量注释。所以在大家看这一系列文章的同时结合着源代码文件中我加入的注释来看可能效果更好一些。下面言归正传讲 xv6 之前先预习一下用到的一些知识。</p>
-
-<h2>预备知识</h2>
-
-<h4>程序 = 数据 + 指令</h4>
-
-<p>无论是操作系统还是运行在操作系统上的软件，对于计算机来说他们都是程序。而程序的组成我们可以简单的理解为：数据加上指令就是程序。当一个程序被从硬盘加载到内存后，CPU 从内存读取程序中的指令执行，执行过程中需要从内存中读取程序的数据，配合指令计算出结果之后还需要放回到内存中。这就是简化后的程序执行过程。</p>
-
-<h4>如何从内存读取指令和数据</h4>
-
-<p>x86 使用“段基址 + 偏移量”的方式来读写内存。这就好比问路，当你向一个人问路时，一般人们回这么回答你：“从前面那个路口开始，往前再走三个路口就到了”。x86 CPU 对内存的寻址也是这个思路，“前面那个路口”就指的是“段基址”，“往前再走三个路口”指的就是“偏移量”，有了这两个线索，CPU 也可以顺利到达内存中的目的地写入或取走数据或指令。</p>
-
-<h4>为什么有个“段”字</h4>
-
-<p>有人可能会问“段基址”里面的“段”代表什么呢？前面说了，程序是由数据和指令组成的，一个程序要运行就先要加载到内存中。而程序中的数据和指令是两个相互独立的部分，CPU 从内存读取他们的时候也是将他们看作是不同的“段”。这里还要插一句，程序中的数据还要分很多种类型，所以 CPU 针对一个程序的不同部分准备了 4 个寄存器来分别存储他们的“段基址”。这 4 个寄存器分别是用于程序指令的 CS 代码段寄存器、用于程序数据的 DS 数据段寄存器、用于程序堆栈（也是数据的一种）的 SS 堆栈段寄存器和 ES 附加段寄存器（也是数据的一种）。</p>
-
-<p>有了这 4 个寄存器存储“基地址”（数据的存放起始点），再配合“偏移量” CPU 就可以从内存读写数据和指令了。例如 CPU 在从内存中读取一个程序的指令准备执行的时候就可以说：“从 CS 指向的地方开始向后读取 2 个位置”，内存收到 CPU 给的“指路信息”后就会把相应位置的指令发给 CPU，CPU 拿到指令就可以开始执行了。</p>
-
-<h4>“段基址” + “偏移量” 寻址方式的由来</h4>
-
-<p>了解了 x86 的内存寻址方式，不禁要问：“为什么要这么设计？”这得从英特尔的 8086 CPU 开始讲起。我们有时说起计算机硬件配置的时候经常会说：“我的电脑是 32 位的”。这里的 32 位起始指的是 CPU 内部的“数据总线”宽度，也叫<del> AUL</del> ALU（算数逻辑单元，感谢 Zongren Zhang 同学找到错误并指正）的宽度。说白了就是 CPU 一次性传递数据的宽度。</p>
-
-<p>英特尔的 8086 CPU 是 16 位的，如果直接用来表示内存地址的话，16 位最大可以表示的内存地址是 2<sup>16</sup> = 65536 个地址，每个地址代表一字节的内存数据的话，16 位最多只能支持 64KB 内存，这显然是不够用的。于是英特尔在保持数据线宽为 16 位的同时将地址线的宽度增大到 20 位，也就是说内存地址是 20 位的，这样就可以拥有 2<sup>20</sup> = 1048576 个地址，最多支持 1MB 的内存，当时的人们认为这样就足够了。</p>
-
-<p>现在问题来了，16 位的数据线宽（寄存器自然也是 16 位的）如何能表示 20 位的地址呢？答案是用两个 16 位的寄存器来表示。这就是“段基址” + “偏移量”寻址方式的由来。一个 16 位的寄存器来表示“段基址”（CS、DS、SS、ES四个寄存器），具体的做法是先将 16 位的“段基址”左移 4 位，然后加上 16 位的“偏移量”最终得到 20 位的内存地址送入地址线。</p>
-
-<h4>地址卷绕</h4>
-
-<p>用两个 16 位的寄存器左移相加来得到 20 位的内存地址这里还是有问题。那就是两个 16 位数相加所得的最大结果是超过 20 位的。例如段基址 0xffff 左移变成 0xffff0 和偏移量 0xffff 相加得到 0x10ffef 这个内存地址是“溢出”的，怎么办？这里 CPU 被设计出来一个“卷绕”机制，当内存地址超过 20 位则绕回来。举个例子你拿 0x100001 来寻址，我就拿你当作 0x00001 。你超出终点我就把你绕回起点。</p>
-
-<h4>向下兼容的现代 x86 计算机</h4>
-
-<p>8086 的年代已经远去。现在的 x86 已早经是 32 位的了（目前 32 位基本已经没有了，64 位是主流了）。但无论位数如何增加，寻址能力如何增大，x86 一直保持着向下兼容的良好传统。即便是当初为 8086 这种 16 位机器写的软件或操作系统（如 DOS）仍能够在现在的 x86 计算机上顺利运行。</p>
-
-<p>那么这种良好的向下兼容性是如何实现的呢？答案是：“开关”。现代的 x86 计算机，无论你是 32 位的还是 64 位的，在开机的那一刻 CPU 都是以模拟 16 位模式运行的，地址卷绕机制也是有效的，所以无论你的电脑内存有多大，开机的时候 CPU 的寻址能力只有 1MB，就好像回到 8086 时代一样。</p>
-
-<p>那么什么时候才结束 CPU 的 16 位模式运行呢？这由你（操作系统）说了算，现代的计算机都有个“开关”叫 A20 gate，开机的时候 A20 gate 是关闭的，CPU 以 16 位模式运行，当 A20 gate 打开的时候“卷绕”机制失效，内存寻址突破 1MB 限制，我们就可以切换到正常的模式下运行了。具体如何打开 A20 gate，下面分析 xv6 的源代码时我会详细说明。</p>
-
-<h4>再说说把程序加载到内存</h4>
-
-<p>我们编写程序代码，编译器将我们的程序代码变成 CPU 可以理解的指令（二进制可执行程序）。在运行我们写的程序前，需要将程序先加载进内存，而我们的程序应该加载到内存的什么位置这应该是由操作系统来负责的，我们程序本身是不能决定这一切的。</p>
-
-<p>这里就产生了一个“矛盾”。在程序真正运行前我们是不知道我们会被放在内存的什么地方，但是我们的程序本身还有数据，代码也含有对数据的访问（例如我们的代码中使用的各种变量），我们不知道我们的数据会被操作系统放在哪，但我们还要在代码里写访问这些数据的逻辑，这是一个矛盾，要怎么办？</p>
-
-<p>解决上述矛盾的办法就是使用相对地址访问。我们的程序在运行前不知道会被操作系统放在内存的什么地方，所以我们在编写程序的时候会做个假设，假设我们的程序会被放在从内存地址 N 开始向后的地方。这个时候我们的程序在访问我们的变量时都继续这个假设，加入我们想要读取我们的变量 a 时，我们就编写指令说我们要访问 N + X 的内存地址，那里存放着我们的变量 a，当然这些假设和生成每个数据的相对访问地址的工作都由编译器代劳了，对于我们程序的编写来说不用为这些事情而烦恼。</p>
-
-<p>所以我们的每一个程序都会基于一个统一的假设：“我们会被从内存地址 N 开始放置”，至于到真正运行时这个 N 对应的内存地址具体是多少无所谓，因为我们对我们程序数据的访问都是相对于 N 的偏移。这就好比说：“我在距离你左边 20 米的地方”，无论你在哪，在火星上也罢，向左走 20 米，你总能找到我。</p>
-
-<h4>程序是“假设”的，操作系统要动“真格”的</h4>
-
-<p>上面说了，所有的程序都基于一个相同的“假设”，但是当程序真正运行的时候，操作系统将程序加载到内存时就不能对程序的这个“假设”听之任之了。当操作系统把程序放置到真正的内存位置后，程序运行起来，程序基于假设 N + X 计算出的内存地址就需要操作系统“翻译”成真正的内存地址后才能真的从内存中读取到想要的数据，而这个“翻译”的过程就需要操作系统和 CPU 来配合实现了。</p>
-
-<p>程序基于“假设”计算出的地址叫做“虚拟地址”也叫做“逻辑地址”（他们是一样的，只是叫法不同），与之对应的内存的真实地址叫做“物理地址”，从“虚拟地址”到“物理地址”的转换是通过一个叫做 MMU（内存管理单元）的硬件实现的，当然这里还少不了操作系统的配合。</p>
-
-<p>从“虚拟地址”到“物理地址”，计算机硬件与操作系统的配合为在操作系统上运行的各种程序提供了“智能”、“安全”、“高效”的运行环境，好处多多。比如程序通过这种假设，统一了虚拟的内存布局，从程序开发层面屏蔽了内存规划的复杂性，运行环境的差异性等，程序只需要关系自己的逻辑，内存布局的事情交给操作系统来负责。另一方面，每个程序运行在各自的内存空间上，彼此处于相互隔离的状态，程序之间无法操作自己内存空间以外的内存，这也增加了程序运行的安全性。</p>
-
-<h4>实模式与保护模式</h4>
-
-<p>罗马不是一天建成的。上面所说的系统硬件和操作系统配合建立的“智能”、“安全”、“高效”的运行环境也是后来才逐渐完善的。所以为了区分这两种环境，在“智能”、“安全”、“高效”的运行环境建立之前计算机是运行在“实模式”下的，在“实模式”下没有“虚拟地址”到“物理地址”的转换，“虚拟地址”就相当于是“物理地址”，而想要这些特性就需要对应的把计算机的运行环境切换到“保护模式”下。</p>
-
-<p>就像之前我们讲到的 A20 gate 从 1MB 的内存寻址模式切换到更大的寻址能力一样。x86 架构的计算机为了向下兼容，开机的时候不仅运行在 1MB 内存寻址环境下，这时候也是运行在“实模式”环境下的。同样有一个开关控制着从“实模式”到“保护模式”的切换，这个开关叫“控制寄存器”。</p>
-
-<h4>保护模式下的分段与分页</h4>
-
-<p>前面说道“保护模式”是由硬件和操作系统配合来提供的。“保护模式”涉及的知识非常多，不仅仅只有对内存的管理，还有诸如进程管理、硬件管理等诸多方面，这里只简单介绍一下“保护模式”下的内存管理。“保护模式”实现的两种内存管理方式：“分段式和分页式”。分页式是目前主流操作系统（Windows、Linux、FreeBSD等）所采取的内存管理方式。</p>
-
-<p>“分页式”技术的出现要比“分段式”晚一些，碰上 x86 这样历史悠久的硬件架构就不得不再提“向下兼容”了。所以 x86 的分页式的实现是继续分段式基础上的。所以想要在 x86 上建立起分页式的内存管理就先要建立分段式内存管理，分页式我们暂且不说，先说说分段式。</p>
-
-<p>分段式简单来说就是将内存规划出不同的“片段”来分配给不同的程序（也包含操作系统自己）使用。分页式则是将内存规划成大小相同的“页”，再将这些页分配给各个程序使用。</p>
-
-<p>这里有两个“段”字非常让人容易迷糊。分段式里的段与之前讲过的“段基址”完全是两码事儿。实模式下的段寄存器里的“段基址”实际上还可以算作内存物理地址，它指向的是内存中的一个位置，而在分段式的保护模式下段寄存器里的“段基址”的意义已经发生里改变，它不再是内存的物理地址，而是指向一个内存分段的段索引。在分段模式下，内存被划分为很多个“片段”，程序数据以及指令就放在这些片段中，当要读取内存中具体的数据时，首先要直到这个数据在哪个“片段”里，这时段寄存器里的“段基址”指向某一个内存片段的下标，而这时的“偏移量”则相应的表示为具体的数据在它所在的内存“片段”里的偏移量。</p>
-
-<p>所以在分段模式下，内存里会有一个“表”，这个“表”里存放了每个内存“片段”的信息（如这个“片段”在内存中的地址，这个“片段”多长等），比如我们现在将内存分成 10 个片段，则这时我们有一个“表”，这个“表”有 10 项分别存放着对应这 10 个内存片段的描述信息。这时我有个数据存放在第 5 个片段中，在第 5 个片段的第 6 个位置上，所以当我们想要读取这个数据的时候，我们的数据段寄存器里存放的“段基址”是 5 这个数，代表要去第 5 个片段上找，对应的这时候的“偏移量”就是 6 这样我们就可以顺利的找到我们想要的数据里。</p>
-
-<p>而要想实现在分段式保护模式下成功的寻址，操作系统需要做的就是在内存中建立这个“表”，“表”里放好内存分段的描述信息，然后把这个“表”在内存的什么位置，以及这个“表”里有多少个内存分段的描述信息告诉 CPU。这个“表”有个学名叫 GDT 全局描述符表，这个我们后面还会有介绍。</p>
-
-<h4>分段式的“段基址” + “偏移量”寻址方式</h4>
-
-<p>在“实模式”下我们讲到内存的寻址方式是“段基址” + “偏移量”，他们生成的结果就是直接可用的内存物理地址，但是到了分段式的保护模式下我们有了 GDT，GDT 里面有了段描述符，段描述符里存储的才是真正的内存物理地址，所以这里我们的“段基址”和“偏移量”的意义都发生了变化。</p>
-
-<p>在分段式的保护模式下，16 位的“段基址”不再表示内存的物理地址，而是表示 GDT 表的下标，用来根据“段基址”从 GDT 表中取得对应下标的“段描述符”，从“段描述符”中取得真实的内存物理地址后在配合“偏移量”来计算出最终的内存地址。</p>
-
-<h4>一个简单的比喻</h4>
-
-<p>说了那么多内存寻址的事儿，说到底无论是程序还是操作系统（其实也是程序），最后到计算机那里都会变成 CPU 从内存通过寻址读取指令和数据执行而已。无论是实模式下的“段基址”+“偏移量”还是保护模式下的“段基址”+“偏移量”，寻址的过程都是十分类似的。为了不让大家脑子里那么乱，这里我在打一个比喻来帮助大家理解“内存寻址”的过程。</p>
-
-<p>内存就好比一个大仓库，这个仓库里有好多好多货架用于存放货物（指令和数据）。我们的操作系统就是这个仓库的管理员，而 CPU 就是这个仓库的小工，这时我们送来一个货物（程序），这个货物有两个大箱子，一个箱子贴着“代码”的标签，另一个贴着“数据”的标签。贴着“代码”标签的箱子里按顺序放着一张一张写着字的纸条（指令），另一个贴着“数据”标签的箱子里放着我们自己按照自己想要的顺序码放好的物品（数据）。这时我们把这个货物（程序）交给仓库管理员（操作系统），看看会发生什么。</p>
-
-<p>管理员（操作系统）拿到我们的货物（程序），先将贴着“代码”标签的箱子放到仓库的某一个货架上，比如放在了 3 号货架上，并在小本本上（代码段寄存器）记下这个箱子放在了 3 号货架上。然后又将贴着“数据”标签的箱子放到 5 号货架上，并在小本本上（数据段寄存器）记录下这个箱子放在了 5 号货架上。接下来就该仓库小工（CPU）工作了。</p>
-
-<p>仓库小工按照小本本上（代码段寄存器）记录的地址跑到 3 号货架上找到那个贴着“代码”标签的箱子，
-按顺序先抽出了箱子里的第一章小纸条（指令），上面写着“我要贴着数据箱子里的第 6 个物品”，这时仓库小工跑去看了一眼量外一个小本本（数据段寄存器），直到贴着“数据”标签的箱子是放在 5 号货柜的，于是仓库小工到了 5 号货柜找到了那个箱子，从箱子里数到第 6 个物品（偏移量）把它拿了出来。</p>
-
-<p>这就是一次内存寻址的过程。我们在写程序的时候，也就是我们准备我们的货物时，我们可以按照我们想要的顺序来码放我们的物品到箱子里（只关心偏移量），当我们把我们的程序写好准备真正去执行的时候，也就是货物准备好交给仓库管理员的时候，仓库管理员按照他自己的想法把我们的货物放在货柜上，并记下我们的箱子都放在哪个货柜（只关心段寄存器里的段基址），等到仓库小工忙活起来的时候拿着货柜号和我们想要的物品在箱子里的相对位置就能够顺利找到我们想要的东西了，这就是“段基址”+“偏移量”的寻址方式。</p>
-
-<p>而什么保护模式之流无非是仓库小工在按照“段基址”+“偏移量”取货的前额外的验证了一下要去的东西到底是不是你的（程序要读取的数据是否属于该程序），你说要箱子里的第 6 个物品，取货前在额外看看你箱子里到底是不是真的有 6 个以上的物品，而取货的流程本质上是没有发生变化的。</p>
-
-<h4>物理地址、线性地址、逻辑地址（虚拟地址）、虚拟内存</h4>
-
-<p>关于内存寻址和内存管理方式已经说了一大堆里，这里通过帮助大家彻底理清上面这四个概念来让大家对内存这块有个整体的认识。</p>
-
-<ul>
-<li>物理地址</li>
-</ul>
-
-
-<p>这个没什么可说的，非常好理解，物理地址就是内存从硬件角度上真正的地址。所有对内存的寻址最终都要转换到物理地址上才能被识别。</p>
-
-<ul>
-<li>逻辑地址（虚拟地址）</li>
-</ul>
-
-
-<p>这两种叫法说的是一种东西。就是我们上面讲的程序基于统一的“假设”通过 N + X 计算出的内存地址。</p>
-
-<ul>
-<li>线性地址</li>
-</ul>
-
-
-<p>线性地址的概念是保护模式下才有的，在实模式下逻辑地址就是物理地址，在保护模式下还要根据分段和分页分开说。在分段模式下逻辑地址通过 GDT 转换成线性地址，此时如果没有分页机制那么线性地址就是物理地址，如果有分页机制，那么线性地址要通过 MMU 再一次转换之后才能变成物理地址。</p>
-
-<ul>
-<li>虚拟内存</li>
-</ul>
-
-
-<p>我们以 32 位计算机为例，在 32 位计算机上支持的最大内存寻址是 4GB，但是每个计算机上真正有多少内存却是不一定的。同样的 32 位计算机，有的可能只有 1GB 内存，有的只有 2GB 内存，而对于程序来说不应该收到这种硬件配置的影响，无论有多少内存，程序都应该正常运行。这就提出里虚拟内存的概念，就像我们之前说的程序的统一假设一样，对于每个程序来说，我们都统一假设只要你的寻址位宽是 32 位，那我就假设我有 4GB 内存可以利用。而具体有多少内存，如何和逻辑地址对应，这是操作系统需要考虑的事情了。</p>
-
-<p>这里多说两句。有的人会有疑问：“我的32位计算机确实只有 1BG 内存，而你说程序当我是 4GB 内存，多余的 3GB 从哪来？”。其实很简单，还是从你的 1GB 物理内存上来。首先要确定的是在你的程序运行的某一时刻你不可能把 1BG 内存完全占用，即便你的程序真的把 1BG 物理内存全部占用里，在某一时刻你需要再向内存写入数据的时候，CPU 会先去内存中找到一个你这一刻不会用到的数据，将这个数据从内存换出到硬盘上，然后将你要写入的数据放入内存中。等之后的某一个时刻你的程序又想从内存中读取刚刚传出到硬盘的那个数据时，CPU 会再次通过同样的办法把一个不用的数据换出到硬盘再把你要的数据换回到内存中来。</p>
-
-<h4>大小端模式</h4>
-
-<p>在准备往下看的时候你会发现我在下面放了几个表格用来表示数据在寄存器或内存中的存储结构，这些表格都是按位来排列的。看这些表格的时候你可能会奇怪这些表格的位序号为什么都是从高到低的，这是因为 x86 是“小端模式”。</p>
-
-<p>我们直到计算机中的数据就按照“字节”位单位存放的，就好像我们写字，当你写一个字的时候没什么问题，但是当你要写一句话的时候就有是“从做往右”还是“从右往左”写的问题。而计算机也一样，当内存或寄存器存储的数据超过 1 字节的时候也会有一个数据摆放顺序的问题。这就是所谓的大小端模式。</p>
-
-<ul>
-<li>大端模式 : 地址的增长顺序与值的增长顺序相同</li>
-<li>小端模式 : 地址的增长顺序与值的增长顺序相反</li>
-</ul>
-
-
-<p>比如我们有一个 16 位（两字节）的数据 0x2345，要存放在内存地址 0x00000010 这个位置上，如果按照大端模式存储就是下面这个样子</p>
-
-<table class="my-table">
-<thead><tr><td>内存地址</td><td>0x00000010</td><td>0x00000011</td></tr></thead>
-<tr><td>数据</td><td>0x23</td><td>0x45</td></tr>   
-</table>
-
-
-<br/><br/>
-
-
-<p>如果是小端模式则是</p>
-
-<table class="my-table">
-<thead><tr><td>内存地址</td><td>0x00000010</td><td>0x00000011</td></tr></thead>
-<tr><td>数据</td><td>0x45</td><td>0x23</td></tr>   
-</table>
-
-
-<br/><br/>
-
-
-<p>而我们书写代码的习惯是从左往右写，则 x86 的小端模式如果按照内存地址位从高到低的方式来看，数据就是从左往右的正常顺序，这样我们看上去比较直观。</p>
-
-<h4>预备知识总结</h4>
-
-<p>说了一大堆，该铺垫的知识基本准备的差不多里，接下来我们就要具体分析 xv6 的代码实现里。这里我们总结一下上面介绍的预备知识，来说说作为一个操作系统在计算机启动后到底应该做些什么：</p>
-
-<ul>
-<li>计算机开机，运行环境为 1MB 寻址限制带“卷绕”机制</li>
-<li>打开 A20 gate 让计算机突破 1MB 寻址限制</li>
-<li>在内存中建立 GDT 全局描述符表，并将建立好的 GDT 表的位置和大小告诉 CPU</li>
-<li>设置控制寄存器，进入保护模式</li>
-<li>按照保护模式的内存寻址方式继续执行</li>
-</ul>
-
-
-<p>好了，下面我们正式进入 xv6 启动阶段的代码学习。</p>
-
-<h2>从 Makefile 开始</h2>
-
-<p>从一个操作系统的角度来说，xv6 的代码量并不大，总共不到一万行，分散在众多的源文件中。一上来可能觉得很迷茫，这么多文件，该从哪个开始看起？Makefile 则是这些文件的“目录”，通过它可以很容易找到头绪。</p>
-
-<p>什么是 Makefile？如果你问起这个，那你还不适合看这个系列的文章，还是那句话，多 Google 吧。继续言归正传。</p>
-
-<p>上一篇<a href="http://leenjewel.github.io/blog/2014/07/24/%5B%28xue-xi-xv6-%29%5D-zai-mac-osx-xia-yun-xing-xv6/">《【学习 Xv6 】在 Mac OSX 下运行 Xv6》</a>中说道 xv6 编译成功后会生成两个文件：xv6.img 和 fs.img 我们从 xv6.img 开始。</p>
-
-<p>从 Makefile 中可以看到 xv6.img 的生成条件：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>xv6.img: bootblock kernel fs.img
-</span><span class='line'>  dd if=/dev/zero of=xv6.img count=10000
-</span><span class='line'>  dd if=bootblock of=xv6.img conv=notrunc
-</span><span class='line'>  dd if=kernel of=xv6.img seek=1 conv=notrunc</span></code></pre></td></tr></table></div></figure>
-
-
-<p>fs.img 这里暂且不说，通过字面不难看出 bootblock 应该是系统一开始引导阶段的逻辑，kernel 当然就是内核了。所以第一步先研究 bootblock。我们接着在 Makefile 里找 bootblock 的生成条件：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>bootblock: bootasm.S bootmain.c
-</span><span class='line'>  $(CC) $(CFLAGS) -fno-pic -O -nostdinc -I. -c bootmain.c
-</span><span class='line'>  $(CC) $(CFLAGS) -fno-pic -nostdinc -I. -c bootasm.S
-</span><span class='line'>  $(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
-</span><span class='line'>  $(OBJDUMP) -S bootblock.o &gt; bootblock.asm
-</span><span class='line'>  $(OBJCOPY) -S -O binary -j .text bootblock.o bootblock
-</span><span class='line'>  ./sign.pl bootblock</span></code></pre></td></tr></table></div></figure>
-
-
-<p>bootblock 的生成只需要两个文件，一个汇编一个 C 源码。那我们就准备讲讲 bootasm.S 文件了。</p>
-
-<h2>x86 的启动</h2>
-
-<p>看具体的代码前先说说 x86 架构开机引导的相关知识。从给 x86 通电的一刻开始，CPU 执行的第一段指令是 BIOS 固化在 ROM 上的代码，这个过程是硬件定死的规矩，就是这样。</p>
-
-<p>而 BIOS 在硬件自检完成后（你会听到“滴”的一声）会根据你在 BIOS 里设置的启动顺序（硬盘、光驱、USB）读取每个引导设备的第一个扇区 512字节的内容，并判断这段内容的最后 2 字节是否为 0xAA55，如果是说明这个设备是可引导的，于是就将这 512 字节的内容放到内存的 0x7C00 位置，然后告诉 CPU 去执行这个位置的指令。这个过程同样是硬件定死的规矩，就是这样。</p>
-
-<p>有了上面的介绍我们再回到 xv6 如果你看一下编译生成的 bootblock 二进制文件，你会惊喜的发现它的文件大小刚好是 512 字节。用十六进制编辑器（我在 Mac OSX 下用的是 0xED 这个软件）打开 bootblock 这个二进制文件，你又会发现这个 512 字节的文件的最后两字节正好是 0xAA55。</p>
-
-<p>再回过头看上面 Makefile 中 xv6.img 生成条件的代码中也可以看出 xv6.img 就是通过 dd 命令讲编译好的 bootblock 和 kernel 拼接而成，这也再一次印证了 bootblock 是负责引导逻辑的结论。</p>
-
-<p>有了这个结论，我们可以开始“放心大胆”的开始看 bootasm.S 这个汇编源文件的代码了。</p>
-
-<h2>bootasm.S 文件</h2>
-
-<p>看 bootasm.S 文件需要你有一定的汇编基础。没有也没关系，我尽量解释的清楚一些。</p>
-
-<p>还是再看一眼 Makefile 里 bootblock 生成那段有这么一句</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>$(LD) $(LDFLAGS) -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这段说明 bootblock 的代码段加载到内存 0x7C00 处，代码从 start 处开始执行（可以理解为相当于 C 中的 main 这样的入口函数）。所以 bootasm.S 一上来就是入口 start</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>.code16
-</span><span class='line'>.global start
-</span><span class='line'>start:
-</span><span class='line'>    cli
-</span><span class='line'>    xorw    %ax,%ax
-</span><span class='line'>    movw    %ax,%ds
-</span><span class='line'>    movw    %ax,%es
-</span><span class='line'>    movw    %ax,%ss</span></code></pre></td></tr></table></div></figure>
-
-
-<p>先讲 start：下面的这 5 行代码。</p>
-
-<p>cli 指令关闭了中断响应，意味着从这一刻开始你的计算机将不再响应任何中断事件（比如这时候你敲个键盘点个鼠标啥的，CPU 就不再理你了）。之所以要关闭中断响应是因为要保证引导代码的顺利执行（总不能执行到一半被 CPU 给中断了吧，那直接就挂了）。</p>
-
-<p>接下来的 4 行代码显示用异或将 %ax 寄存器的值置成 0，然后在用 %ax 寄存器的值将 %ds、%es、%ss 三个寄存器的值全部置 0，相当于初始化了。</p>
-
-<p>然后我们再看 .code16 这句。这告诉 CPU 我们目前是在 16 位模式下执行代码，此时内存寻址能力只有 1MB，并且是“实模式”下。</p>
-
-<h2>打开 A20 gate</h2>
-
-<p>在预备知识那段我们讲里要想计算机突破 1MB 内存寻址的限制我们要把 A20 gate 打开，我们接着往下看 xv6 bootasm.S 的代码。在初始化好寄存器后，xv6 bootasm.S 接下来要做的事情就是打开 A20 gate 突破 1MB 内存寻址的限制。</p>
-
-<p>控制 A20 gate 的方法有 3 种：</p>
-
-<ul>
-<li>804x 键盘控制器法</li>
-<li>Fast A20 法</li>
-<li>BIOS 中断法</li>
-</ul>
-
-
-<p>xv6 用了第一种 804x 键盘控制器法，这也是最古老且效率最慢的一种。当然因为硬件的不同，这三种方法可能不会被硬件都支持，正确的做法应该是这三种都尝试一下，每尝试一个就验证一下 A20 gate 是否被正确打开以保证兼容各种硬件。但是 xv6 作为一款教学用的操作系统就没必要做的这么复杂里。只用了一种最古老的方法（保证兼容大多数硬件）而且没有对打开成功与否做验证。像诸如 Linux 这样的操作系统就把三种方法的实现都做好里，并且加上了验证机制。</p>
-
-<p>我们具体来看 xv6 的实现代码</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>seta20.1:  
-</span><span class='line'>  inb     $0x64,%al
-</span><span class='line'>  testb   $0x2,%al
-</span><span class='line'>  jnz     seta20.1 
-</span><span class='line'>
-</span><span class='line'>  movb    $0xd1,%al
-</span><span class='line'>  outb    %al,$0x64
-</span><span class='line'>
-</span><span class='line'>seta20.2:
-</span><span class='line'>  inb     $0x64,%al
-</span><span class='line'>  testb   $0x2,%al
-</span><span class='line'>  jnz     seta20.2 
-</span><span class='line'>
-</span><span class='line'>  movb    $0xdf,%al
-</span><span class='line'>  outb    %al,$0x60</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这里 bootasm.S 用了两个方法 seta20.1 和 seta20.2 来实现通过 804x 键盘控制器打开 A20 gate。 这个办法确实是分两步来搞的：</p>
-
-<p>第一步是向 804x 键盘控制器的 0x64 端口发送命令。这里传送的命令是 0xd1，这个命令的意思是要向键盘控制器的 P2 写入数据。这就是 seta20.1 代码段所做的工作（具体的解释可以参看我在代码中写的注释）。</p>
-
-<p>第二步就是向键盘控制器的 P2 端口写数据了。写数据的方法是把数据通过键盘控制器的 0x60 端口写进去。写入的数据是 0xdf，因为 A20 gate 就包含在键盘控制器的 P2 端口中，随着 0xdf 的写入，A20 gate 就被打开了。</p>
-
-<p>接下来要做的就是进入“保护模式”了。</p>
-
-<h2>xv6 准备 GDT</h2>
-
-<p>在进入保护模式前需要将 GDT 准备好。什么是 GDT ？它的中文名称叫“全局描述符表”，前面的“预备知识”里已经做里介绍，想要在“保护模式”下对内存进行寻址就先要有 GDT，GDT 表里的每一项叫做“段描述符”，用来记录每个内存分段的一些属性信息，每个“段描述符”占 8 字节，我们先来看一眼这个段描述符的具体结构：</p>
-
-<table class="my-table">
-<thead><tr><td>31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td>24</td><td>23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td>16</td><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td> 9</td><td> 8</td><td> 7</td><td> 6</td><td> 5</td><td> 4</td><td> 3</td><td> 2</td><td> 1</td><td> 0</td></tr></thead>
-<tr><th colspan="8">基地址</th><td> G</td><td>DB</td><td>XX</td><td>AA</td><th colspan="4">Limit</th><td> P</td><th colspan="2">DPL</th><td> S</td><td> E</td><td>ED</td><td>RW</td><td>A</td><th colspan="8">基地址</th></tr>
-<tr><th colspan="16">基地址</th><th colspan="16">Limit</th></tr>
-</table>
-
-
-<br/><br/>
-
-
-<p>三块“基地址”组装起来正好就是 32 位的段起始内存地址，两块 Limit 组成该内存分段的长度，接下来依次解释一下其他位所代表的意义：</p>
-
-<ul>
-<li>P:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;0 本段不在内存中</li>
-<li>DPL:&#8194;&#8194;&#8194;&#8194;&#8194;访问该段内存所需权限等级 00 &mdash; 11，0为最大权限级别</li>
-<li>S:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;1 代表数据段、代码段或堆栈段，0 代表系统段如中断门或调用门</li>
-<li>E:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;1 代表代码段，可执行标记，0 代表数据段</li>
-<li>ED:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;0 代表忽略特权级，1 代表遵守特权级</li>
-<li>RW:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;如果是数据段（E=0）则1 代表可写入，0 代表只读；<br/>
-&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;如果是代码段（E=1）则1 代表可读取，0 代表不可读取</li>
-<li>A:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;1 表示该段内存访问过，0 表示没有被访问过</li>
-<li>G:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;1 表示 20 位段界限单位是 4KB，最大长度 4GB；<br/>
-&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;0 表示 20 位段界限单位是 1 字节，最大长度 1MB</li>
-<li>DB:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;1 表示地址和操作数是 32 位，0 表示地址和操作数是 16 位</li>
-<li>XX:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;保留位永远是 0</li>
-<li>AA:&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;给系统提供的保留位</li>
-</ul>
-
-
-<p>有了上述的解释，我们再来看看 xv6 是怎样准备自己的 GDT 的，代码在 bootasm.S 文件最底部：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gdt:
-</span><span class='line'>  SEG_NULLASM                             # 空
-</span><span class='line'>  SEG_ASM(STA_X|STA_R, 0x0, 0xffffffff)   # 代码段
-</span><span class='line'>  SEG_ASM(STA_W, 0x0, 0xffffffff)         # 数据（堆栈）段
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这里用到了几个宏，具体的宏定义在 asm.h 文件中，为了方便大家直观的感受一下 xv6 的 GDT 我把宏计算出来的值直接翻译过来，代码应该是下面这个样子：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gdt:
-</span><span class='line'>  .word 0, 0;
-</span><span class='line'>  .byte 0, 0, 0, 0                             # 空
-</span><span class='line'>  .word 0xffff, 0x0000;
-</span><span class='line'>  .byte 0x00, 0x9a, 0xcf, 0x00                 # 代码段
-</span><span class='line'>  .word 0xffff, 0x0000;
-</span><span class='line'>  .byte 0x00, 0x92, 0xcf, 0x00                 # 数据段</span></code></pre></td></tr></table></div></figure>
-
-
-<p>然后我们再把代码段和数据段的段描述符具体每一位的对应值表展示出来，首先是代码段：</p>
-
-<table class="my-table">
-<thead><tr><td>31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td>24</td><td>23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td>16</td><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td> 9</td><td> 8</td><td> 7</td><td> 6</td><td> 5</td><td> 4</td><td> 3</td><td> 2</td><td> 1</td><td> 0</td></tr></thead>
-<tr><th colspan="8">基地址</th><td> G</td><td>DB</td><td>XX</td><td>AA</td><th colspan="4">Limit</th><td> P</td><th colspan="2">DPL</th><td> S</td><td> E</td><td>ED</td><td>RW</td><td>A</td><th colspan="8">基地址</th></tr>
-<tr><th colspan="8">0x00</th><td>1</td><td>1</td><td>0</td><td>0</td><th colspan="4">0xf</th><td>1</td><th colspan="2">00</th><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><th colspan="8">0x00</th></tr>
-<tr><th colspan="16">基地址</th><th colspan="16">Limit</th></tr>
-<tr><th colspan="16">0x0000</th><th colspan="16">0xffff</th></tr>
-</table>
-
-
-<br/><br/>
-
-
-<p>然后是数据段：</p>
-
-<table class="my-table">
-<thead><tr><td>31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td>24</td><td>23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td>16</td><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td> 9</td><td> 8</td><td> 7</td><td> 6</td><td> 5</td><td> 4</td><td> 3</td><td> 2</td><td> 1</td><td> 0</td></tr></thead>
-<tr><th colspan="8">基地址</th><td> G</td><td>DB</td><td>XX</td><td>AA</td><th colspan="4">Limit</th><td> P</td><th colspan="2">DPL</th><td> S</td><td> E</td><td>ED</td><td>RW</td><td>A</td><th colspan="8">基地址</th></tr>
-<tr><th colspan="8">0x00</th><td>1</td><td>1</td><td>0</td><td>0</td><th colspan="4">0xf</th><td>1</td><th colspan="2">00</th><td>1</td><td>0</td><td>0</td><td>1</td><td>0</td><th colspan="8">0x00</th></tr>
-<tr><th colspan="16">基地址</th><th colspan="16">Limit</th></tr>
-<tr><th colspan="16">0x0000</th><th colspan="16">0xffff</th></tr>
-</table>
-
-
-<br/><br/>
-
-
-<p>我们来一步步解释一下。首先说说这两个内存段的共同点，DB = 1，G = 1，基地址都是 0x00000000，内存分段长度都是 0xfffff，这说明他们都是用于 32 位寻址，所使用的内存是从 0 开始到 4GB 结束（全部内存）。这里是这么算出来的，段长度是 0xfffff = 2<sup>20</sup>，G = 1 表示段界限单位是 4k，所以 4k * 2<sup>20</sup> = 4GB。</p>
-
-<p>再说说他们的不同点，代码段的 E = 1 而数据段的 E = 0 这表名了他们的身份，身份不同 RW 的值虽然相同，但代表的意义也就不相同了，代码段的 RW = 1 代表可读取，数据段的 RW = 1 表示可读可写。这也和我们上面解释的保护模式所能够达到的目的相吻合。</p>
-
-<p>当然作为一款教学为目的的操作系统，xv6 这里的 GDT 设置还是以简单容易理解为目的。诸如“权限位”这样的安全机制就直接被忽略了，而对内存的规划也没有做到真正的“分段”，而是代码段和数据段都启用了从 0 到 4GB 的全部内存寻址。其实这种内存规划方法叫做“平坦内存模型”，即便是 Linux 也是用的这样的方式规划内存的，并没有做到真正的“分段”。这是因为 x86 的分页机制是基于分段的，Linux 选用了更先进的分页机制来管理内存，所以在分段这里只是走一个必要的形式罢了。而 xv6 后面到底是否也启用了分页机制，我们目前还不得而知。</p>
-
-<h2>xv6 正式进入保护模式</h2>
-
-<p>GDT 也搞定了，接下来我们就要把我们刚刚在内存中设定好的 GDT 的位置告诉 CPU，然后就“万事俱备，只欠东风”了。CPU 单独为我们准备了一个寄存器叫做 GDTR 用来保存我们 GDT 在内存中的位置和我们 GDT 的长度。GDTR 寄存器一共 48 位，其中高 32 位用来存储我们的 GDT 在内存中的位置，其余的低 16 位用来存我们的 GDT 有多少个段描述符。 16 位最大可以表示 65536 个数，这里我们把单位换成字节，而一个段描述符是 8 字节，所以 GDT 最多可以有 8192 个段描述符。不仅 CPU 用了一个单独的寄存器 GDTR 来存储我们的 GDT，而且还专门提供了一个指令用来让我们把 GDT 的地址和长度传给 GDTR 寄存器，来看 xv6 的代码：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>lgdt   gdtdesc</span></code></pre></td></tr></table></div></figure>
-
-
-<p>而这个 gdtdesc 和 gdt 一起放在了 bootasm.S 文件的最底部，我们看一眼：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>gdtdesc:
-</span><span class='line'>  .word   (gdtdesc - gdt - 1)             # 16 位的 gdt 大小sizeof(gdt) - 1
-</span><span class='line'>  .long   gdt                             # 32 位的 gdt 所在物理地址</span></code></pre></td></tr></table></div></figure>
-
-
-<p>不多不少，正好 48 位传给了 GDTR 寄存器，到此 GDT 就准备好了，接下来我们进入保护模式！</p>
-
-<p>前面预备知识中讲到，就如同 A20 gate 这个开关负责打开 1MB 以上内存寻址一样，想要进入“保护模式”我们也需要打开一个开关，这个开关叫“控制寄存器”，x86 的控制寄存器一共有 4 个分别是 CR0、CR1、CR2、CR3，而控制进入“保护模式”的开关在 CR0 上，这四个寄存器都是 32 位的，我们看一下 CR0 上和保护模式有关的位</p>
-
-<table class="my-table">
-<thead><tr><td>31</td><td>30</td><td>29</td><td>28</td><td>27</td><td>26</td><td>25</td><td>24</td><td>23</td><td>22</td><td>21</td><td>20</td><td>19</td><td>18</td><td>17</td><td>16</td><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td> 9</td><td> 8</td><td> 7</td><td> 6</td><td> 5</td><td> 4</td><td> 3</td><td> 2</td><td> 1</td><td> 0</td></tr></thead>
-<tr><td>PG</td><th colspan="30">其他控制位</th><td>PE</td></tr>
-</table>
-
-
-<br/><br/><br/><br/>
-
-
-<ul>
-<li><p>PG&#8194;&#8194;&#8194;&#8194;为 0 时代表只使用分段式，不使用分页式<br/>
-&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;为 1 是启用分页式</p></li>
-<li><p>PE&#8194;&#8194;&#8194;&#8194;为 0 时代表关闭保护模式，运行在实模式下<br/>
-&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;&#8194;为 1 则开启保护模式</p></li>
-</ul>
-
-
-<p>然后我们继续看 xv6 打开保护模式的代码：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>movl    %cr0, %eax
-</span><span class='line'>orl     $CR0_PE, %eax
-</span><span class='line'>movl    %eax, %cr0</span></code></pre></td></tr></table></div></figure>
-
-
-<p>因为我们无法直接操作 CR0，所以我们首先要用一个通用寄存器来保存当前 CR0 寄存器的值，这里第一行就是用通用寄存器 eax 来保存 cr0 寄存器的值；然后 CR0_PE 这个宏的定义在 mmu.h 文件中，是个数值 0x00000001，将这个数值与 eax 中的 cr0 寄存器的值做“或”运算后，就保证将 cr0 的第 0 位设置成了 1 即 PE = 1 保证打开了保护模式的开关。而 cr0 的第 31 位 PG = 0 表示我们只使用分段式，不使用分页，这时再将新的计算后的 eax 寄存器中的值写回到 cr0 寄存器中就完成了到保护模式的切换。</p>
-
-<h2>准备迎接 .code32</h2>
-
-<p>到这里我们关于 xv6 从实模式到保护模式的讲解就接近尾声了。我们已经进入到保护模式了，接下来可以将代码彻底以 32 位的保护模式来运行了。所以这时我们的 xv6 也要准备跳转了，再来看一行代码：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>ljmp  $(SEG_KCODE&lt;&lt;3) $start32</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这是一个跳转语句，通知 CPU 跳转到指定位置继续执行指令。 xv6 在这时就准备跳转到用 C 写成的代码处去继续运行了。这个跳转语句的两个参数就是我们之前一直再讲的典型的“基地址” + “偏移量”的方式告诉 CPU 要跳转到内存的什么位置去继续执行指令。</p>
-
-<p>而这时我们已经在分段式的保护模式下了，所以我们通过这句跳转语句来直观的感受一下分段式保护模式下的内存寻址。</p>
-
-<p>前面预备知识里说道在分段式保护模式下“段基址”（基地址）不再是内存地址，而是 GDT 表的下标。上面我们也说过 GDT 表最大可以有 8192 个表项（段描述符），2<sup>13</sup> = 8192，所以保存着“段基址”的 16 位段寄存器只需要其中的 13 位就可以表示一个 GDT 表的下标，其余的 3 位可用作他用。</p>
-
-<p>按照这个思路我们看看这个 $(SEG_KCODE&lt;&lt;3) 生成的“段基址”是什么？SEG_KCODE 是个宏定义，具体的定义在 mmu.h 文件中，我们翻译过来就是 $(1&lt;&lt;3)，再将它运算出来得到</p>
-
-<table class="my-table">
-<thead><tr><td>15</td><td>14</td><td>13</td><td>12</td><td>11</td><td>10</td><td> 9</td><td> 8</td><td> 7</td><td> 6</td><td> 5</td><td> 4</td><td> 3</td><td> 2</td><td> 1</td><td> 0</td></tr></thread>
-<tr><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td></tr>
-</table>
-
-
-<br/><br/>
-
-
-<p>这里这个 16 位的“段基址”的高 13 位代表 GDT 表的下标（学名应该叫“段选择子”），这里高 13 位刚好是 1，而我们的 GDT 里下标位 1 的内存段正好是我们的“代码段”，而“代码段”我们在 GDT 的“段描述符”中设置了它的其实内存地址是 0x00000000 ，内存段长度是 0xfffff，这是完整的 4GB 内存。</p>
-
-<p>所以这里的跳转语句选择了“代码段”，由于“代码段”的起始内存地址是 0x00000000 ，长度是完整的 4GB，所以后面的“偏移量”仍然相当于是实际的内存地址，所以这里“偏移量”直接用了 $start32，也就是 start32 直接对应的代码位置。通过这个跳转实际上 CPU 就会跳转到 bootasm.S 文件的 start32 标识符处继续执行了。</p>
-
-		
-		
-	</div>
-
-
-<div class="meta">
-	<div class="date">
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-07-29T13:27:25+08:00" pubdate data-updated="true">2014年7月29日</time></div>
-	<div class="tags">
-
-
-	<a class='category' href='/blog/categories/cao-zuo-xi-tong/'>操作系统</a>
-
-
-</div>
-	
-	<div class="comments"><a href="/blog/2014/07/29/%5B%28xue-xi-xv6%29%5D-cong-shi-mo-shi-dao-bao-hu-mo-shi/#disqus_thread">Comments</a></div>
 	
 	<div>
 		<br/><div>如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</div>
