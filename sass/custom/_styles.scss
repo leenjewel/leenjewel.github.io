@@ -5,3 +5,22 @@
     text-align: center !important;
     padding: 3px !important;
 }
+
+.post-donate { text-align: center;}
+
+#btn_donate{
+  display: inline-block;
+  width: 82px;
+  height: 82px;
+  background: url("http://7rfk33.com1.z0.glb.clouddn.com/btn_reward.gif") no-repeat;
+}
+#btn_donate:hover { background-position: 0px -82px;}
+.donate_bar.hidden { display: none; }
+.donate_bar .donate_txt {
+  color: #9d9d9d;
+  font: 14px/2 "Microsoft Yahei";
+}
+.mlr5 {
+  margin-left: 5px;
+  margin-right: 5px;
+}
