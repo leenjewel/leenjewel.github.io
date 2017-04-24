@@ -1,7 +1,7 @@
 <!-- 添加捐赠图标 -->
     <div class ="post-donate">
         <div id="donate_board" class="donate_bar">
-            <a id="btn_donate" href="javascript:;" title="Donate 打赏"></a>
+            <a id="btn_donate" href="#" title="Donate 打赏"></a>
             <br>
             <span class="donate_txt">如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</span>
             <br>
@@ -18,6 +18,10 @@
         document.getElementById('btn_donate').onclick = function(){
             $('#donate_board').addClass('hidden');
             $('#donate_guide').removeClass('hidden');
+        }
+        document.getElementById('donate_guide').onclick = function(){
+            $('#donate_board').removeClass('hidden');
+            $('#donate_guide').addClass('hidden');
         }
         </script>
     </div>
