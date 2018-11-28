@@ -104,5 +104,5 @@ facebook_like: false
 share_to_jiathis: true
 
 donate: true
-donate_wechat_image_link: 'http://7rfk33.com1.z0.glb.clouddn.com/my_weixin_pay.JPG'
-donate_alipay_image_link: 'http://7rfk33.com1.z0.glb.clouddn.com/my_alipay_pay.JPG'
+donate_wechat_image_link: 'http://leenjewel.github.io/assets/my_weixin_pay.JPG'
+donate_alipay_image_link: 'http://leenjewel.github.io/assets/my_alipay_pay.JPG'
