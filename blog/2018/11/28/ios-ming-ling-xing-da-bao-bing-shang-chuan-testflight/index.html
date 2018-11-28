@@ -1,0 +1,348 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>iOS 命令行打包并上传 TestFlight - leenjewel Blog</title>
+	<meta name="author" content="leenjewel">
+
+	
+	<meta name="description" content="网络上教大家如何用命令行的方式构建 iOS ipa 包并上传 TestFlight 的文章非常多了，最近也正好用到这些来结合 Jenkins 做持续集成。亲手实践了一把也找了很多相关的资料，发现大多成文较早，都或多或少的有些问题，所以这里也把自己最近一次实践做个总结。需要注意的点都标注上了。 环境 &hellip;">
+	
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<link href="/atom.xml" rel="alternate" title="leenjewel Blog" type="application/atom+xml">
+	<link rel="canonical" href="">
+	<link href="/favicon.png" rel="shortcut icon">
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+	<script async="true" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	<script type="text/javascript" src="/javascripts/jquery-1.11.3.min.js"></script>
+<script type="text/javascript" src="http://tajs.qq.com/stats?sId=52606582" charset="UTF-8"></script>
+<script type="text/javascript" charset="UTF-8" src="http://lurongkai.github.io/anti-baidu/js/anti-baidu-latest.min.js"></script>
+
+</head>
+
+
+<body>
+	<header id="header" class="inner"><nav id="title-nav">
+<h1><a href="/">leenjewel Blog</a></h1>
+
+<h2>Anything about code.</h2>
+
+</nav>
+<nav id="main-nav"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</nav>
+<nav id="mobile-nav">
+	<div class="alignleft menu">
+		<a class="button">Menu</a>
+		<div class="container"><ul class="main">
+	<li><a href="/">首页</a></li>
+	<li><a href="/blog/archives">全部日志</a></li>
+</ul>
+</div>
+	</div>
+	<div class="alignright search">
+		<a class="button"></a>
+		<div class="container">
+			<form action="https://www.google.com/search" method="get">
+				<input type="text" name="q" results="0">
+				<input type="hidden" name="q" value="site:leenjewel.github.io">
+			</form>
+		</div>
+	</div>
+</nav>
+<nav id="sub-nav" class="alignright">
+	<div class="social">
+		
+		
+		
+		
+		<a class="github" href="https://github.com/leenjewel" title="GitHub">GitHub</a>
+		
+    
+		
+		
+		
+		
+		
+		<a class="rss" href="/atom.xml" title="RSS">RSS</a>
+		
+    
+	</div>
+	<form class="search" action="https://www.google.com/search" method="get">
+		<input class="alignright" type="text" name="q" results="0">
+		<input type="hidden" name="q" value="site:leenjewel.github.io">
+	</form>
+</nav>
+
+</header>
+	
+		
+	
+	<div id="content" class="inner"><article class="post">
+	<h2 class="title">iOS 命令行打包并上传 TestFlight</h2>
+	<div class="entry-content"><p>网络上教大家如何用命令行的方式构建 iOS ipa 包并上传 TestFlight 的文章非常多了，最近也正好用到这些来结合 Jenkins 做持续集成。亲手实践了一把也找了很多相关的资料，发现大多成文较早，都或多或少的有些问题，所以这里也把自己最近一次实践做个总结。需要注意的点都标注上了。</p>
+
+<h2>环境</h2>
+
+<p>我用的基本上都是最新的 iOS 开发环境，简单罗列</p>
+
+<ul>
+<li><p>Mac OS X 10.14.1 Mojave</p></li>
+<li><p>Xcode 10.1(10B61)</p></li>
+<li><p>CocoaPods 1.6.0.beta.2</p></li>
+</ul>
+
+
+<blockquote><p><strong>这里 CocoaPods 之所以用了 Beta 版本是因为目前为止稳定版和最新的 Xcode 10 兼容性上有些问题。当然了，在更新 CocoaPods Beta 版本的时候发现 gem 命令更新针对 Mac OS X 10.14 也有了改变，具体更新 CocoaPods 的命令是：</strong></p>
+
+<p><code>
+sudo gem install -n /usr/local/bin cocoapods --pre
+</code></p></blockquote>
+
+<h2>构建 Archive</h2>
+
+<p>先给出具体的命令</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/usr/bin/xcodebuild -scheme  -configuration Release -derivedDataPath derivedData -archivePath  -destination generic/platform=iOS clean archive</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果你使用了 CocoaPods 做你的 iOS 工程依赖管理，那么你的 iOS 工程中会存在一个 <code>xcworkspace</code> 因此构建的命令也会稍显不一样，要增加一个参数项指定你的 <code>xcworkspace</code> 位置</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/usr/bin/xcodebuild -workspace  -scheme  -configuration Release -derivedDataPath derivedData -archivePath  -destination generic/platform=iOS clean archive</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>导出 IPA</h2>
+
+<p>上一步构建 Archive 并不难，我自己卡在导出 IPA 包这步卡的比较久，主要是一直没有搞正确 <code>exportOptionsPlist</code> 这个 plist 文件的写法。</p>
+
+<p>还是先给出具体的命令</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/usr/bin/xcodebuild -exportArchive -exportOptionsPlist  -archivePath  -exportPath </span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p><strong>导出 ipa 包最关键的是要把 exportOptionsPlist 参数指定的 plist 文件写正确。这里有个敲门，那就是你可以先使用 Xcode 做一次 Archive 然后将构建成功的工程通过 Xcode 的 Organizer 做一次发布。当然，不要选择直接发布到 TestFlight 而是在选择 <code>Distribute App</code> 后要选择 <code>iOS App Store</code> 然后选择 <code>Export</code> 而不是 upload</strong></p></blockquote>
+
+<p><img src="http://leenjewel.github.io/assets/ios_command_build_ipa_upload_testflight/xcode_open_orgnaizer.png" alt="1、打开 Xcode Orgnaizer" /></p>
+
+<p><img src="http://leenjewel.github.io/assets/ios_command_build_ipa_upload_testflight/orgnaizer_distribute_app.png" alt="2、选择 Distribute App" /></p>
+
+<p><img src="http://leenjewel.github.io/assets/ios_command_build_ipa_upload_testflight/orgnaizer_ios_appstore.png" alt="3、选择 iOS App Store" /></p>
+
+<p><img src="http://leenjewel.github.io/assets/ios_command_build_ipa_upload_testflight/orgnaizer_export_app.png" alt="4、选择 Export" /></p>
+
+<p><img src="http://leenjewel.github.io/assets/ios_command_build_ipa_upload_testflight/export_options_plist.png" alt="5、得到 ExportOptions.plist 文件" /></p>
+
+<p>在你用 Xcode 导出的可以上传到 TestFlight 的包中你可以找到一个名为 <code>ExportOptions.plist</code> 的文件。使用这个文件作为命令行导出 ipa 是 <code>exportOptionsPlist</code> 参数的文件输入就一定不会错了。</p>
+
+<p>顺便给出我导出的这个 plist 文件的内容示意</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+</span><span class='line'>&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+</span><span class='line'>&lt;plist version="1.0"&gt;
+</span><span class='line'>&lt;dict&gt;
+</span><span class='line'>  &lt;key&gt;destination&lt;/key&gt;
+</span><span class='line'>  &lt;string&gt;export&lt;/string&gt;
+</span><span class='line'>  &lt;key&gt;method&lt;/key&gt;
+</span><span class='line'>  &lt;string&gt;app-store&lt;/string&gt;
+</span><span class='line'>  &lt;key&gt;signingStyle&lt;/key&gt;
+</span><span class='line'>  &lt;string&gt;automatic&lt;/string&gt;
+</span><span class='line'>  &lt;key&gt;stripSwiftSymbols&lt;/key&gt;
+</span><span class='line'>  &lt;true/&gt;
+</span><span class='line'>  &lt;key&gt;teamID&lt;/key&gt;
+</span><span class='line'>  &lt;string&gt;&lt;/string&gt;
+</span><span class='line'>  &lt;key&gt;uploadBitcode&lt;/key&gt;
+</span><span class='line'>  &lt;true/&gt;
+</span><span class='line'>  &lt;key&gt;uploadSymbols&lt;/key&gt;
+</span><span class='line'>  &lt;true/&gt;
+</span><span class='line'>&lt;/dict&gt;
+</span><span class='line'>&lt;/plist&gt;</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>&#8220; 就是开发者账号里那个 10 位的 team id</p></blockquote>
+
+<h2>关于证书</h2>
+
+<p>构建、导出、上传 TestFlight 都需要证书这个是基本概念。这里要顺带提上一句的是证书放置的位置。在 <code>钥匙串访问</code> 程序里证书可以放置的位置有三个：</p>
+
+<ul>
+<li><p>登陆</p></li>
+<li><p>本地项目</p></li>
+<li><p>系统</p></li>
+</ul>
+
+
+<blockquote><p><strong>请将出包上传 TestFlight 用的证书放置在【登陆】这个位置，千万不要放置在【系统】中，否则每次出包系统会弹出对话框让你输入用户登录认证的用户名和密码，这样是无法做到自动化出包的。</strong></p></blockquote>
+
+<h2>上传 TestFlight</h2>
+
+<p>最后一步上传 TestFlight 就没什么难点了，直接给出命令</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/Applications/Xcode.app/Contents/Applications/Application Loader.app/Contents/Frameworks/ITunesSoftwareService.framework/Versions/A/Support/altool --upload-app -t ios -f  -u  -p </span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+<div class="meta">
+	<div class="date">
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2018-11-28T13:40:51+08:00" pubdate data-updated="true">2018年11月28日</time></div>
+	<div class="tags">
+
+
+	<a class='category' href='/blog/categories/ios/'>iOS</a>
+
+
+</div>
+	
+	<div class="comments"><a href="#disqus_thread">Comments</a></div>
+	
+	<div>
+		<br/>
+		
+    	<!-- 添加捐赠图标 -->
+    <div class ="post-donate">
+        <div id="donate_board" class="donate_bar">
+            <a id="btn_donate" href="#" title="Donate 打赏"></a>
+            <br>
+            <span class="donate_txt">如果你觉得这篇文章让你受益匪浅，欢迎捐赠以鼓励作者！</span>
+            <br>
+        </div>  
+  
+        <div id="donate_guide" class="donate_bar hidden">
+            <!-- 支付宝打赏图案 -->
+            <img src="http://7rfk33.com1.z0.glb.clouddn.com/my_alipay_pay.JPG" class="mlr5" title="支付宝打赏" >
+            <!-- 微信打赏图案 -->
+            <img src="http://7rfk33.com1.z0.glb.clouddn.com/my_weixin_pay.JPG" class="mlr5" title="微信打赏">
+        </div>
+  
+        <script type="text/javascript">
+        document.getElementById('btn_donate').onclick = function(){
+            $('#donate_board').addClass('hidden');
+            $('#donate_guide').removeClass('hidden');
+        }
+        document.getElementById('donate_guide').onclick = function(){
+            $('#donate_board').removeClass('hidden');
+            $('#donate_guide').addClass('hidden');
+        }
+        </script>
+    </div>
+<!-- 添加捐赠图标 -->
+
+  		
+	</div>
+</div>
+</article>
+
+	<div class="share">
+	<div class="addthis_toolbox addthis_default_style ">
+		
+		
+		
+		
+	</div>
+	
+</div>
+
+
+
+<section id="comment">
+    <h2 class="title">Comments</h2>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+</section>
+</div>
+	<footer id="footer" class="inner">Copyright &copy; 2018
+
+    leenjewel
+
+<script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1256882796'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s95.cnzz.com/z_stat.php%3Fid%3D1256882796%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script></footer>
+	<script src="/javascripts/slash.js"></script>
+<script src="/javascripts/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+	$('.fancybox').fancybox();
+})(jQuery);
+</script> <!-- Delete or comment this line to disable Fancybox -->
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'leenjewelgithubio';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://leenjewel.github.io/blog/2018/11/28/ios-ming-ling-xing-da-bao-bing-shang-chuan-testflight/';
+        var disqus_url = 'http://leenjewel.github.io/blog/2018/11/28/ios-ming-ling-xing-da-bao-bing-shang-chuan-testflight/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//go.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-52061917-1']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+<script async src="//pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+<!-- leenjewel.github.io -->
+<ins class="adsbygoogle"
+     style="display:inline-block;width:728px;height:90px"
+     data-ad-client="ca-pub-7743616000257723"
+     data-ad-slot="4032598696"></ins>
+<script>
+(adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+</body>
+</html>
